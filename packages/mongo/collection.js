@@ -6,12 +6,13 @@ import {
 } from 'meteor/minimongo/constants';
 
 import { normalizeProjection } from "./mongo_utils";
+import { LocalCollectionDriver } from './local_collection_driver.js';
 
 /**
  * @summary Namespace for MongoDB-related items
  * @namespace
  */
-Mongo = {};
+export const Mongo = {};
 
 /**
  * @summary Constructor for a Collection
@@ -104,6 +105,7 @@ Mongo.Collection = function Collection(name, options) {
     // collection from Node code without webapp", but we don't yet.
     // #MeteorServerNull
     if (
+      Meteor.isServer &&
       name &&
       this._connection === Meteor.server &&
       typeof MongoInternals !== 'undefined' &&
@@ -111,7 +113,6 @@ Mongo.Collection = function Collection(name, options) {
     ) {
       options._driver = MongoInternals.defaultRemoteCollectionDriver();
     } else {
-      const { LocalCollectionDriver } = require('./local_collection_driver.js');
       options._driver = LocalCollectionDriver;
     }
   }
@@ -1097,9 +1098,6 @@ Object.assign(Mongo.Collection.prototype, {
     if (self._collection.createIndexAsync) {
       await self._collection.createIndexAsync(index, options);
     } else {
-      import { Log } from 'meteor/logging';
-
-      Log.debug(`ensureIndexAsync has been deprecated, please use the new 'createIndexAsync' instead${ options?.name ? `, index name: ${ options.name }` : `, index: ${ JSON.stringify(index) }` }`)
       await self._collection.ensureIndexAsync(index, options);
     }
   },

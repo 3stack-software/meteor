@@ -1,3 +1,4 @@
+import { Meteor } from './client_environment.js';
 if (Meteor.isServer) {
   if (typeof __meteor_runtime_config__ === 'object') {
     __meteor_runtime_config__.debug =
