@@ -1,7 +1,15 @@
-require("./extensions.js");
+// import { makeCompatible } from 'meteor-promise';
+// import Fibers from 'fibers';
+import { setMinimumBrowserVersions } from 'meteor/modern-browsers';
+
+// const Promise = globalThis.Promise;
+
+// makeCompatible(Promise, Fibers);
+
+// export { Promise };
 
 // Reference: https://caniuse.com/#feat=promises
-require("meteor/modern-browsers").setMinimumBrowserVersions({
+setMinimumBrowserVersions({
   chrome: 32,
   edge: 12,
   // Since there is no IE12, this effectively excludes Internet Explorer

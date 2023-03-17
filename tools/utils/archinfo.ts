@@ -131,6 +131,7 @@ export const VALID_ARCHITECTURES: Record<string, boolean> = {
   "os.osx.x86_64": true,
   "os.osx.arm64": true,
   "os.linux.x86_64": true,
+  "os.linux.aarch64": true,
   "os.windows.x86_64": true,
   "os.linux.aarch64": true,
 };

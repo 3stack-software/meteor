@@ -31,17 +31,15 @@ import { Meteor } from './client_environment.js';
 
 "use strict";
 
-var global = window;
-
 
 // IE 10, Node >= 9.1
 
 function useSetImmediate() {
-  if (! global.setImmediate)
+  if (! globalThis.setImmediate)
     return null;
   else {
     var setImmediate = function (fn) {
-      global.setImmediate(fn);
+      globalThis.setImmediate(fn);
     };
     setImmediate.implementation = 'setImmediate';
     return setImmediate;
@@ -54,22 +52,22 @@ function useSetImmediate() {
 function usePostMessage() {
   // The test against `importScripts` prevents this implementation
   // from being installed inside a web worker, where
-  // `global.postMessage` means something completely different and
+  // `globalThis.postMessage` means something completely different and
   // can't be used for this purpose.
 
-  if (!global.postMessage || global.importScripts) {
+  if (!globalThis.postMessage || globalThis.importScripts) {
     return null;
   }
 
   // Avoid synchronous post message implementations.
 
   var postMessageIsAsynchronous = true;
-  var oldOnMessage = global.onmessage;
-  global.onmessage = function () {
+  var oldOnMessage = globalThis.onmessage;
+  globalThis.onmessage = function () {
       postMessageIsAsynchronous = false;
   };
-  global.postMessage("", "*");
-  global.onmessage = oldOnMessage;
+  globalThis.postMessage("", "*");
+  globalThis.onmessage = oldOnMessage;
 
   if (! postMessageIsAsynchronous)
     return null;
@@ -77,7 +75,7 @@ function usePostMessage() {
   var funcIndex = 0;
   var funcs = {};
 
-  // Installs an event handler on `global` for the `message` event: see
+  // Installs an event handler on `globalThis` for the `message` event: see
   // * https://developer.mozilla.org/en/DOM/window.postMessage
   // * http://www.whatwg.org/specs/web-apps/current-work/multipage/comms.html#crossDocumentMessages
 
@@ -95,7 +93,7 @@ function usePostMessage() {
     // anyone else trick us into firing off. We test the origin is
     // still this window, and that a (randomly generated)
     // unpredictable identifying prefix is present.
-    if (event.source === global &&
+    if (event.source === globalThis &&
         isStringAndStartsWith(event.data, MESSAGE_PREFIX)) {
       var index = event.data.substring(MESSAGE_PREFIX.length);
       try {
@@ -108,19 +106,19 @@ function usePostMessage() {
     }
   }
 
-  if (global.addEventListener) {
-    global.addEventListener("message", onGlobalMessage, false);
+  if (globalThis.addEventListener) {
+    globalThis.addEventListener("message", onGlobalMessage, false);
   } else {
-    global.attachEvent("onmessage", onGlobalMessage);
+    globalThis.attachEvent("onmessage", onGlobalMessage);
   }
 
   var setImmediate = function (fn) {
-    // Make `global` post a message to itself with the handle and
+    // Make `globalThis` post a message to itself with the handle and
     // identifying prefix, thus asynchronously invoking our
     // onGlobalMessage listener above.
     ++funcIndex;
     funcs[funcIndex] = fn;
-    global.postMessage(MESSAGE_PREFIX + funcIndex, "*");
+    globalThis.postMessage(MESSAGE_PREFIX + funcIndex, "*");
   };
   setImmediate.implementation = 'postMessage';
   return setImmediate;
@@ -129,14 +127,14 @@ function usePostMessage() {
 
 function useTimeout() {
   var setImmediate = function (fn) {
-    global.setTimeout(fn, 0);
+    globalThis.setTimeout(fn, 0);
   };
   setImmediate.implementation = 'setTimeout';
   return setImmediate;
 }
 
 
-Meteor._setImmediate =
+export const Meteor$_setImmediate =
   useSetImmediate() ||
   usePostMessage() ||
   useTimeout();

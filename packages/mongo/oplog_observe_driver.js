@@ -2,6 +2,8 @@ import has from 'lodash.has';
 import isEmpty from 'lodash.isempty';
 import { oplogV2V1Converter } from "./oplog_v2_converter";
 import { check, Match } from 'meteor/check';
+import { idForOp } from "./oplog_tailing.js";
+import { Cursor, CursorDescription, forEachTrigger, listenAll } from "./mongo_driver.js";
 
 var PHASE = {
   QUERYING: "QUERYING",
@@ -30,7 +32,7 @@ var currentId = 0;
 // same simple interface: constructing it starts sending observeChanges
 // callbacks (and a ready() invocation) to the ObserveMultiplexer, and you stop
 // it by calling the stop() method.
-OplogObserveDriver = function (options) {
+export const OplogObserveDriver = function (options) {
   const self = this;
   self._usesOplog = true;  // tests look at this
 
@@ -927,7 +929,7 @@ _.extend(OplogObserveDriver.prototype, {
           'many documents match your query. Cursor description: ',
           self._cursorDescription);
       }
-      
+
       self._published.forEach(function (doc, id) {
         if (!newResults.has(id))
           throw Error("_published has a doc that newResults doesn't; " + id);
@@ -1052,5 +1054,3 @@ var modifierCanBeDirectlyApplied = function (modifier) {
     });
   });
 };
-
-MongoInternals.OplogObserveDriver = OplogObserveDriver;

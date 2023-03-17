@@ -1,3 +1,4 @@
+import { publishCursor } from 'meteor/mongo/collection_util.js';
 import * as LCS from './local_collection_static.js';
 import Matcher from './matcher.js';
 import Sorter from './sorter.js';
@@ -34,7 +35,7 @@ export default class Cursor {
     this._transform = LCS.wrapTransform(options.transform);
 
     // by default, queries register w/ Tracker when it is available.
-    if (typeof Tracker !== 'undefined') {
+    if (Package.tracker) {
       this.reactive = options.reactive === undefined ? true : options.reactive;
     }
   }
@@ -363,13 +364,13 @@ export default class Cursor {
       isReadyPromise: null,
     });
 
-    if (this.reactive && Tracker.active) {
+    if (Package.tracker && Package.tracker.Tracker.active && this.reactive) {
       // XXX in many cases, the same observe will be recreated when
       // the current autorun is rerun.  we could save work by
       // letting it linger across rerun and potentially get
       // repurposed if the same observe is performed, using logic
       // similar to that of Meteor.subscribe.
-      Tracker.onInvalidate(() => {
+      Package.tracker.Tracker.onInvalidate(() => {
         handle.stop();
       });
     }
@@ -409,8 +410,8 @@ export default class Cursor {
   // XXX Maybe we need a version of observe that just calls a callback if
   // anything changed.
   _depend(changers, _allow_unordered) {
-    if (Tracker.active) {
-      const dependency = new Tracker.Dependency();
+    if (Package.tracker && Package.tracker.Tracker.active) {
+      const dependency = new Package.tracker.Tracker.Dependency;
       const notify = dependency.changed.bind(dependency);
 
       dependency.depend();
@@ -543,19 +544,12 @@ export default class Cursor {
 
   _publishCursor(subscription) {
     // XXX minimongo should not depend on mongo-livedata!
-    if (!Package.mongo) {
-      throw new Error(
-        "Can't publish from Minimongo without the `mongo` package."
-      );
-    }
-
     if (!this.collection.name) {
       throw new Error(
         "Can't publish a cursor from a collection without a name."
       );
     }
-
-    return Package.mongo.Mongo.Collection._publishCursor(
+    return publishCursor(
       this,
       subscription,
       this.collection.name

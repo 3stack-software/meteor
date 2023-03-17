@@ -3,7 +3,7 @@ import isEmpty from 'lodash.isempty';
 
 let nextObserveHandleId = 1;
 
-ObserveMultiplexer = class {
+export class ObserveMultiplexer {
   constructor({ ordered, onStop = () => {} } = {}) {
     if (ordered === undefined) throw Error("must specify ordered");
 
@@ -206,7 +206,7 @@ ObserveMultiplexer = class {
 };
 
 // When the callbacks do not mutate the arguments, we can skip a lot of data clones
-ObserveHandle = class {
+export class ObserveHandle {
   constructor(multiplexer, callbacks, nonMutatingCallbacks = false) {
     this._multiplexer = multiplexer;
     multiplexer.callbackNames().forEach((name) => {

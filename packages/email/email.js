@@ -1,29 +1,14 @@
-import { Meteor } from 'meteor/meteor';
 import { Log } from 'meteor/logging';
 import { Hook } from 'meteor/callback-hook';
 
 import url from 'url';
 import nodemailer from 'nodemailer';
+import MailComposer from 'nodemailer/lib/mail-composer';
 import wellKnow from 'nodemailer/lib/well-known';
 import { openpgpEncrypt } from 'nodemailer-openpgp';
 
 export const Email = {};
 export const EmailTest = {};
-
-export const EmailInternals = {
-  NpmModules: {
-    mailcomposer: {
-      version: Npm.require('nodemailer/package.json').version,
-      module: Npm.require('nodemailer/lib/mail-composer'),
-    },
-    nodemailer: {
-      version: Npm.require('nodemailer/package.json').version,
-      module: Npm.require('nodemailer'),
-    },
-  },
-};
-
-const MailComposer = EmailInternals.NpmModules.mailcomposer.module;
 
 const makeTransport = function (mailUrlString, options) {
   const mailUrl = new URL(mailUrlString);
@@ -113,32 +98,39 @@ const knownHostsTransport = function (settings = undefined, url = undefined, opt
 };
 EmailTest.knowHostsTransport = knownHostsTransport;
 
-const getTransport = function (options) {
-  const packageSettings = Meteor.settings.packages?.email || {};
-  // We delay this check until the first call to Email.send, in case someone
-  // set process.env.MAIL_URL in startup code. Then we store in a cache until
-  // process.env.MAIL_URL changes.
-  const url = process.env.MAIL_URL;
-  if (
-    globalThis.cacheKey === undefined ||
-    globalThis.cacheKey !== url ||
-    globalThis.cacheKey !== packageSettings.service ||
-    globalThis.cacheKey !== 'settings'
-  ) {
-    if (
-      (packageSettings.service && wellKnow(packageSettings.service)) ||
-      (url && wellKnow(new URL(url).hostname)) ||
-      wellKnow(url?.split(':')[0] || '')
-    ) {
-      globalThis.cacheKey = packageSettings.service || 'settings';
-      globalThis.cache = knownHostsTransport(packageSettings, url, options);
-    } else {
-      globalThis.cacheKey = url;
-      globalThis.cache = url ? makeTransport(url, options) : null;
-    }
+class TransportFactory {
+  constructor() {
+    this.cacheKey = undefined;
+    this.cache = undefined;
   }
-  return globalThis.cache;
-};
+   getTransport() {
+    const packageSettings = Meteor.settings.packages?.email || {};
+    // We delay this check until the first call to Email.send, in case someone
+    // set process.env.MAIL_URL in startup code. Then we store in a cache until
+    // process.env.MAIL_URL changes.
+    const url = process.env.MAIL_URL;
+    if (
+      this.cacheKey === undefined ||
+      this.cacheKey !== url ||
+      this.cacheKey !== packageSettings.service ||
+      this.cacheKey !== 'settings'
+    ) {
+      if (
+        (packageSettings.service && wellKnow(packageSettings.service)) ||
+        (url && wellKnow(new URL(url).hostname)) ||
+        wellKnow(url?.split(':')[0] || '')
+      ) {
+        this.cacheKey = packageSettings.service || 'settings';
+        this.cache = knownHostsTransport(packageSettings, url);
+      } else {
+        this.cacheKey = url;
+        this.cache = url ? makeTransport(url, packageSettings) : null;
+      }
+    }
+    return this.cache;
+  }
+}
+const transportFactory = new TransportFactory();
 
 let nextDevModeMailId = 0;
 
@@ -260,7 +252,7 @@ Email.sendAsync = async function (options) {
   }
 
   if (mailUrlEnv || mailUrlSettings) {
-    return getTransport().sendMail(email);
+    return transportFactory.getTransport().sendMail(email);
   }
 
   return devModeSendAsync(email, options);

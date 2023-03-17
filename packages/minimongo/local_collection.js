@@ -745,7 +745,7 @@ export default class LocalCollection {
     }
   }
   _eachPossiblyMatchingDocSync(selector, fn) {
-    const specificIds = LocalCollection._idsMatchedBySelector(selector);
+    const specificIds = LCS._idsMatchedBySelector(selector);
 
     if (specificIds) {
       for (const id of specificIds) {

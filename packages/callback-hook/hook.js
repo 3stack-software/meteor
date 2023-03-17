@@ -1,3 +1,5 @@
+import { Meteor$wrapFn } from '../meteor/helpers.js';
+
 // XXX This pattern is under development. Do not add more callsites
 // using this package for now. See:
 // https://meteor.hackpad.com/Design-proposal-Hooks-YxvgEW06q6f
@@ -79,7 +81,7 @@ export class Hook {
     }
 
     if (this.wrapAsync) {
-      callback = Meteor.wrapFn(callback);
+      callback = Meteor$wrapFn(callback);
     }
 
     const id = this.nextCallbackId++;

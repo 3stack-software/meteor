@@ -2,7 +2,7 @@
 // when all of the writes are fully committed and propagated (all
 // observers have been notified of the write and acknowledged it.)
 //
-DDPServer._WriteFence = class {
+export class WriteFence {
   constructor() {
     this.armed = false;
     this.fired = false;
@@ -43,7 +43,7 @@ DDPServer._WriteFence = class {
   // uncommitted writes, it will activate.
   arm() {
 
-    if (this === DDPServer._getCurrentFence())
+    if (this === CurrentWriteFence.get())
       throw Error("Can't arm the current fence");
     this.armed = true;
     return this._maybeFire();
@@ -124,4 +124,4 @@ DDPServer._WriteFence = class {
 // that writes to databases should register their writes with it using
 // beginWrite().
 //
-DDPServer._CurrentWriteFence = new Meteor.EnvironmentVariable;
+export const CurrentWriteFence = new Meteor.EnvironmentVariable;

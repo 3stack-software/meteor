@@ -5,18 +5,18 @@ export {
 } from './packages/meteor/debug.js';
 export {
   Meteor$EnvironmentVariable as EnvironmentVariable,
-  Meteor$_nodeCodeMustBeInFiber as _nodeCodeMustBeInFiber,
   Meteor$bindEnvironment as bindEnvironment,
+  Meteor$_nodeCodeMustBeInFiber as _nodeCodeMustBeInFiber,
 } from './packages/meteor/dynamics_nodejs.js';
 export {
-  Meteor$_delete as _delete,
-  Meteor$_ensure as _ensure,
+  Meteor$release as release,
   Meteor$_get as _get,
+  Meteor$_ensure as _ensure,
+  Meteor$_delete as _delete,
+  Meteor$promisify as promisify,
+  Meteor$wrapAsync as wrapAsync,
   Meteor$_inherits as _inherits,
   Meteor$_wrapAsync as _wrapAsync,
-  Meteor$promisify as promisify,
-  Meteor$release as release,
-  Meteor$wrapAsync as wrapAsync,
 } from './packages/meteor/helpers.js';
 export { Meteor$wrapFn as wrapFn } from './packages/meteor/helpers_wrapfn.js';
 export {
@@ -24,72 +24,65 @@ export {
   Meteor$makeErrorType as makeErrorType,
 } from './packages/meteor/errors.js';
 export {
+  Meteor$setTimeout as setTimeout,
+  Meteor$setInterval as setInterval,
   Meteor$clearInterval as clearInterval,
   Meteor$clearTimeout as clearTimeout,
   Meteor$defer as defer,
-  Meteor$setInterval as setInterval,
-  Meteor$setTimeout as setTimeout,
 } from './packages/meteor/timers.js';
 export { Meteor$_setImmediate as _setImmediate } from './packages/meteor/setimmediate.js';
+export const _localStorage = undefined;
+export { Meteor$startup as startup, Meteor$runStartup as runStartup } from './packages/meteor/startup_server.js';
 export {
-  Meteor$runStartup as runStartup,
-  Meteor$startup as startup,
-} from './packages/meteor/startup_server.js';
-export {
-  Meteor$_SynchronousQueue as _SynchronousQueue,
   Meteor$_noYieldsAllowed as _noYieldsAllowed,
+  Meteor$_SynchronousQueue as _SynchronousQueue,
   Meteor$_sleepForMs as _sleepForMs,
 } from './packages/meteor/fiber_helpers.js';
 export { default as _DoubleEndedQueue } from 'denque';
 export {
-  Meteor$_relativeToSiteRootUrl as _relativeToSiteRootUrl,
   Meteor$absoluteUrl as absoluteUrl,
+  Meteor$_relativeToSiteRootUrl as _relativeToSiteRootUrl,
 } from './packages/meteor/url_common.js';
 export { Meteor$_escapeRegExp as _escapeRegExp } from './packages/meteor/string_utils.js';
+
 export {
-  Meteor$apply as apply,
-  Meteor$applyAsync as applyAsync,
+  Meteor$server as server,
+  Meteor$refresh as refresh,
+  Meteor$publish as publish,
+  Meteor$methods as methods,
   Meteor$call as call,
   Meteor$callAsync as callAsync,
-  Meteor$methods as methods,
+  Meteor$apply as apply,
+  Meteor$applyAsync as applyAsync,
   Meteor$onConnection as onConnection,
   Meteor$onMessage as onMessage,
-  Meteor$publish as publish,
-  Meteor$refresh as refresh,
-  Meteor$server as server,
-} from './packages/ddp-server/server_convenience.js';
+} from 'meteor/ddp-server';
+
+export const connection = undefined;
+export const subscribe = undefined;
+export const status = undefined;
+export const reconnect = undefined;
+export const disconnect = undefined;
+
 export {
+  Meteor$users as users,
+  Meteor$userId as userId,
   Meteor$user as user,
   Meteor$userAsync as userAsync,
-  Meteor$userId as userId,
-  Meteor$users as users,
-} from './packages/accounts-base/server_main.js';
-export { Meteor$gitCommitHash as gitCommitHash } from './packages/meteor/server_environment.js';
-export { Meteor$settings as settings } from './packages/meteor/server_settings.js';
-
-const _localStorage = undefined;
-
-const connection = undefined;
-const subscribe = undefined;
-const status = undefined;
-const reconnect = undefined;
-const disconnect = undefined;
-const loggingIn = undefined;
-const loggingOut = undefined;
-const logout = undefined;
-const logoutOtherClients = undefined;
-const loginWithToken = undefined;
+} from 'meteor/accounts-base';
+export const loggingIn = undefined;
+export const loggingOut = undefined;
+export const logout = undefined;
+export const logoutOtherClients = undefined;
+export const loginWithToken = undefined;
 
 export {
-  _localStorage,
-  connection,
-  disconnect,
-  loggingIn,
-  loggingOut,
-  loginWithToken,
-  logout,
-  logoutOtherClients,
-  reconnect,
-  status,
-  subscribe,
-};
+  Meteor$isClient as isClient,
+  Meteor$isServer as isServer,
+  Meteor$isCordova as isCordova,
+  Meteor$isProduction as isProduction,
+  Meteor$isDevelopment as isDevelopment,
+  Meteor$isModern as isModern,
+  Meteor$gitCommitHash as gitCommitHash,
+  Meteor$settings as settings,
+} from './packages/meteor/server_environment.js';

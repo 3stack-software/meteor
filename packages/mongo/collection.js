@@ -1,19 +1,37 @@
 // options.connection, if given, is a LivedataClient or LivedataServer
 // XXX presently there is no way to destroy/clean up a Collection
+import { Log } from 'meteor/logging';
 import {
   ASYNC_COLLECTION_METHODS,
   getAsyncMethodName,
 } from 'meteor/minimongo/constants';
 
+import { LocalCollectionDriver } from './local_collection_driver.js';
+import { defaultRemoteCollectionDriver } from './remote_collection_driver.js';
+import { publishCursor, rewriteSelector } from './collection_util.js';
 import { normalizeProjection } from "./mongo_utils";
 import { LocalCollectionDriver } from './local_collection_driver.js';
 
-/**
- * @summary Namespace for MongoDB-related items
- * @namespace
- */
-export const Mongo = {};
-
+export function warnUsingOldApi (
+    methodName,
+    collectionName,
+    isCalledFromAsync
+   ){
+  if (
+    Meteor.isServer &&
+    process.env.WARN_WHEN_USING_OLD_API && // also ensures it is on the server
+    !isCalledFromAsync // must be true otherwise we should log
+  ) {
+   if (collectionName === undefined || collectionName.includes('oplog')) return
+   console.warn(`
+   
+   Calling method ${collectionName}.${methodName} from old API on server.
+   This method will be removed, from the server, in version 3.
+   Trace is below:`)
+   console.trace()
+ };
+}
+const __lookup_by_name = new Map();
 /**
  * @summary Constructor for a Collection
  * @locus Anywhere
@@ -31,7 +49,7 @@ The default id generation technique is `'STRING'`.
  * @param {Function} options.transform An optional transformation function. Documents will be passed through this function before being returned from `fetch` or `findOneAsync`, and before being passed to callbacks of `observe`, `map`, `forEach`, `allow`, and `deny`. Transforms are *not* applied for the callbacks of `observeChanges` or to cursors returned from publish functions.
  * @param {Boolean} options.defineMutationMethods Set to `false` to skip setting up the mutation methods that enable insert/update/remove from client code. Default `true`.
  */
-Mongo.Collection = function Collection(name, options) {
+export function Collection(name, options) {
   if (!name && name !== null) {
     Meteor._debug(
       'Warning: creating anonymous collection. It will not be ' +
@@ -45,6 +63,9 @@ Mongo.Collection = function Collection(name, options) {
     throw new Error(
       'First argument to new Mongo.Collection must be a string or null'
     );
+  }
+  if (typeof name === 'string') {
+    __lookup_by_name.set(name, this);
   }
 
   if (options && options.methods) {
@@ -74,7 +95,7 @@ Mongo.Collection = function Collection(name, options) {
         var src = name
           ? DDP.randomStream('/collection/' + name)
           : Random.insecure;
-        return new Mongo.ObjectID(src.hexString(24));
+        return new MongoID.ObjectID(src.hexString(24));
       };
       break;
     case 'STRING':
@@ -107,11 +128,9 @@ Mongo.Collection = function Collection(name, options) {
     if (
       Meteor.isServer &&
       name &&
-      this._connection === Meteor.server &&
-      typeof MongoInternals !== 'undefined' &&
-      MongoInternals.defaultRemoteCollectionDriver
+      this._connection === Meteor.server
     ) {
-      options._driver = MongoInternals.defaultRemoteCollectionDriver();
+      options._driver = defaultRemoteCollectionDriver();
     } else {
       options._driver = LocalCollectionDriver;
     }
@@ -158,7 +177,13 @@ Mongo.Collection = function Collection(name, options) {
   Mongo._collections.set(this._name, this);
 };
 
-Object.assign(Mongo.Collection.prototype, {
+Collection.__getCollectionByName = function(name) {
+  if (typeof name !== 'string') {
+    return
+  }
+  return __lookup_by_name.get(name);
+}
+Object.assign(Collection.prototype, {
   async _maybeSetUpReplication(name) {
     const self = this;
     if (
@@ -566,62 +591,12 @@ Object.assign(Mongo.Collection.prototype, {
   },
 });
 
-Object.assign(Mongo.Collection, {
-  async _publishCursor(cursor, sub, collection) {
-    var observeHandle = await cursor.observeChanges(
-        {
-          added: function(id, fields) {
-            sub.added(collection, id, fields);
-          },
-          changed: function(id, fields) {
-            sub.changed(collection, id, fields);
-          },
-          removed: function(id) {
-            sub.removed(collection, id);
-          },
-        },
-        // Publications don't mutate the documents
-        // This is tested by the `livedata - publish callbacks clone` test
-        { nonMutatingCallbacks: true }
-    );
-
-    // We don't call sub.ready() here: it gets called in livedata_server, after
-    // possibly calling _publishCursor on multiple returned cursors.
-
-    // register stop callback (expects lambda w/ no args).
-    sub.onStop(async function() {
-      return await observeHandle.stop();
-    });
-
-    // return the observeHandle in case it needs to be stopped early
-    return observeHandle;
-  },
-
-  // protect against dangerous selectors.  falsey and {_id: falsey} are both
-  // likely programmer error, and not what you want, particularly for destructive
-  // operations. If a falsey _id is sent in, a new string _id will be
-  // generated and returned; if a fallbackId is provided, it will be returned
-  // instead.
-  _rewriteSelector(selector, { fallbackId } = {}) {
-    // shorthand -- scalars match _id
-    if (LocalCollection._selectorIsId(selector)) selector = { _id: selector };
-
-    if (Array.isArray(selector)) {
-      // This is consistent with the Mongo console itself; if we don't do this
-      // check passing an empty array ends up selecting all items
-      throw new Error("Mongo selector can't be an array.");
-    }
-
-    if (!selector || ('_id' in selector && !selector._id)) {
-      // can't match anything
-      return { _id: fallbackId || Random.id() };
-    }
-
-    return selector;
-  },
+Object.assign(Collection, {
+  _publishCursor: publishCursor,
+  _rewriteSelector: rewriteSelector,
 });
 
-Object.assign(Mongo.Collection.prototype, {
+Object.assign(Collection.prototype, {
   // 'insert' immediately returns the inserted document's new _id.
   // The others return values immediately if you are in a stub, an in-memory
   // unmanaged collection, or a mongo-backed collection and you don't pass a
@@ -668,7 +643,7 @@ Object.assign(Mongo.Collection.prototype, {
     if ('_id' in doc) {
       if (
         !doc._id ||
-        !(typeof doc._id === 'string' || doc._id instanceof Mongo.ObjectID)
+        !(typeof doc._id === 'string' || doc._id instanceof MongoID.ObjectID)
       ) {
         throw new Error(
           'Meteor requires document _id fields to be non-empty strings or ObjectIDs'
@@ -927,7 +902,7 @@ Object.assign(Mongo.Collection.prototype, {
         if (
           !(
             typeof options.insertedId === 'string' ||
-            options.insertedId instanceof Mongo.ObjectID
+            options.insertedId instanceof MongoID.ObjectID
           )
         )
           throw new Error('insertedId must be string or ObjectID');
@@ -939,7 +914,7 @@ Object.assign(Mongo.Collection.prototype, {
       }
     }
 
-    selector = Mongo.Collection._rewriteSelector(selector, {
+    selector = rewriteSelector(selector, {
       fallbackId: insertedId,
     });
 
@@ -1005,7 +980,7 @@ Object.assign(Mongo.Collection.prototype, {
    * @param {Function} [callback] Optional.  If present, called with an error object as the first argument and, if no error, the number of affected documents as the second.
    */
   remove(selector, callback) {
-    selector = Mongo.Collection._rewriteSelector(selector);
+    selector = rewriteSelector(selector);
 
     if (this._isRemoteCollection()) {
       return this._callMutatorMethod('remove', [selector], callback);
@@ -1022,6 +997,9 @@ Object.assign(Mongo.Collection.prototype, {
   // database on another server
   _isRemoteCollection() {
     // XXX see #MeteorServerNull
+    if (Meteor.isClient) {
+      return this._connection != null;
+    }
     return this._connection && this._connection !== Meteor.server;
   },
 
@@ -1093,7 +1071,7 @@ Object.assign(Mongo.Collection.prototype, {
    */
   async ensureIndexAsync(index, options) {
     var self = this;
-    if (!self._collection.ensureIndexAsync || !self._collection.createIndexAsync)
+    if (Meteor.isClient || !self._collection.ensureIndexAsync || !self._collection.createIndexAsync)
       throw new Error('Can only call createIndexAsync on server collections');
     if (self._collection.createIndexAsync) {
       await self._collection.createIndexAsync(index, options);
@@ -1158,21 +1136,21 @@ Object.assign(Mongo.Collection.prototype, {
 
   async dropIndexAsync(index) {
     var self = this;
-    if (!self._collection.dropIndexAsync)
+    if (Meteor.isClient || !self._collection.dropIndexAsync)
       throw new Error('Can only call dropIndexAsync on server collections');
     await self._collection.dropIndexAsync(index);
   },
 
   async dropCollectionAsync() {
     var self = this;
-    if (!self._collection.dropCollectionAsync)
+    if (Meteor.isClient || !self._collection.dropCollectionAsync)
       throw new Error('Can only call dropCollectionAsync on server collections');
    await self._collection.dropCollectionAsync();
   },
 
   async createCappedCollectionAsync(byteSize, maxDocuments) {
     var self = this;
-    if (! await self._collection.createCappedCollectionAsync)
+    if (Meteor.isClient || ! await self._collection.createCappedCollectionAsync)
       throw new Error(
         'Can only call createCappedCollectionAsync on server collections'
       );
@@ -1187,7 +1165,7 @@ Object.assign(Mongo.Collection.prototype, {
    */
   rawCollection() {
     var self = this;
-    if (!self._collection.rawCollection) {
+    if (Meteor.isClient|| !self._collection.rawCollection) {
       throw new Error('Can only call rawCollection on server collections');
     }
     return self._collection.rawCollection();
@@ -1201,7 +1179,7 @@ Object.assign(Mongo.Collection.prototype, {
    */
   rawDatabase() {
     var self = this;
-    if (!(self._driver.mongo && self._driver.mongo.db)) {
+    if (Meteor.isClient|| !(self._driver.mongo && self._driver.mongo.db)) {
       throw new Error('Can only call rawDatabase on server collections');
     }
     return self._driver.mongo.db;
@@ -1246,38 +1224,8 @@ function wrapCallback(callback, convertResult) {
   );
 }
 
-/**
- * @summary Create a Mongo-style `ObjectID`.  If you don't specify a `hexString`, the `ObjectID` will be generated randomly (not using MongoDB's ID construction rules).
- * @locus Anywhere
- * @class
- * @param {String} [hexString] Optional.  The 24-character hexadecimal contents of the ObjectID to create
- */
-Mongo.ObjectID = MongoID.ObjectID;
-
-/**
- * @summary To create a cursor, use find. To access the documents in a cursor, use forEach, map, or fetch.
- * @class
- * @instanceName cursor
- */
-Mongo.Cursor = LocalCollection.Cursor;
-
-/**
- * @deprecated in 0.9.1
- */
-Mongo.Collection.Cursor = Mongo.Cursor;
-
-/**
- * @deprecated in 0.9.1
- */
-Mongo.Collection.ObjectID = Mongo.ObjectID;
-
-/**
- * @deprecated in 0.9.1
- */
-Meteor.Collection = Mongo.Collection;
-
 // Allow deny stuff is now in the allow-deny package
-Object.assign(Mongo.Collection.prototype, AllowDeny.CollectionPrototype);
+Object.assign(Collection.prototype, AllowDeny.CollectionPrototype);
 
 function popCallbackFromArgs(args) {
   // Pull off any callback (or perhaps a 'callback' variable that was passed

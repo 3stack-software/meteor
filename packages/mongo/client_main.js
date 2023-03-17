@@ -1,3 +1,9 @@
-export { ObjectID } from '../mongo-id/id.js';
-export { Collection } from './collection_client.js';
-export { Cursor } from '../minimongo/minimongo_common.js';
+import { Collection } from './collection.js';
+
+export { Collection };
+
+export const Mongo = /*#__PURE__*/Object.freeze({
+  Collection,
+  Cursor: LocalCollection.Cursor,
+  ObjectID: MongoID.ObjectID,
+});

@@ -19,8 +19,7 @@ Package.onUse(function (api) {
   // `String.prototype.padRight` which is polyfilled only in
   // `ecmascript-runtime-client@0.6.2` or newer.
   api.use(['ejson', 'ecmascript', 'typescript', 'ecmascript-runtime-client']);
-  api.mainModule('logging.js', 'web.browser');
-  api.mainModule('logging_server.js', 'server');
+  api.mainModule('logging.js');
   api.mainModule('logging_cordova.js', 'web.cordova');
   api.addAssets('logging.d.ts', 'server');
 });

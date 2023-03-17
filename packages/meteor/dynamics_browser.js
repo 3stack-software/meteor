@@ -2,10 +2,59 @@ import { Meteor } from './client_environment.js';
 import { EnvironmentVariable, getEnvironment, setEnvironment } from './dynamics_browser_ev.js';
 // Simple implementation of dynamic scoping, for use in browsers
 
+var nextSlot = 0;
+var currentValues = [];
+var callAsyncMethodRunning = false;
+
+export const Meteor$EnvironmentVariable = function () {
+  this.slot = nextSlot++;
+};
+
+var EVp = Meteor$EnvironmentVariable.prototype;
+
+EVp.getCurrentValues = function () {
+  return currentValues;
+};
+EVp.get = function () {
+  return currentValues[this.slot];
+};
+
+EVp.getOrNullIfOutsideFiber = function () {
+  return this.get();
+};
+
+EVp.withValue = function (value, func) {
+  var saved = currentValues[this.slot];
+  try {
+    currentValues[this.slot] = value;
+    var ret = func();
+  } finally {
+    currentValues[this.slot] = saved;
+  }
+  return ret;
+};
+
+EVp._set = function (context) {
+  currentValues[this.slot] = context;
+};
+
+EVp._setNewContextAndGetCurrent = function (value) {
+  var saved = currentValues[this.slot];
+  this._set(value);
+  return saved;
+};
+
+EVp._isCallAsyncMethodRunning = function () {
+  return callAsyncMethodRunning;
+};
+
+EVp._setCallAsyncMethodRunning = function (value) {
+  callAsyncMethodRunning = value;
+};
 
 Meteor.EnvironmentVariable = EnvironmentVariable;
 
-Meteor.bindEnvironment = function (func, onException, _this) {
+export const Meteor$bindEnvironment = function (func, onException, _this) {
   // needed in order to be able to create closures inside func and
   // have the closed variables not change back to their original
   // values

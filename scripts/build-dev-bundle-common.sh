@@ -13,7 +13,7 @@ NPM_VERSION=10.8.2
 
 if [ "$UNAME" == "Linux" ] ; then
     NODE_BUILD_NUMBER=
-    if [[ "$ARCH" != "i686" && "$ARCH" != "x86_64" && "$ARCH" != "aarch64"  ]] ; then
+    if [ "$ARCH" != "i686" -a "$ARCH" != "x86_64" -a "$ARCH" != "aarch64" ] ; then
         echo "Unsupported architecture: $ARCH"
         echo "Meteor only supports i686, x86_64 and aarch64 for now."
         exit 1

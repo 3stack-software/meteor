@@ -110,7 +110,7 @@ CollectionPrototype._defineMutationMethods = function(options) {
   // it wait()s until its result is ready, yielding.
   // This matches the behavior of macromongo on the server better.
   // XXX see #MeteorServerNull
-  if (self._connection && (self._connection === Meteor.server || Meteor.isClient)) {
+  if ((Meteor.isClient && self._connection) || (Meteor.isServer && self._connection === Meteor.server)) {
     const m = {};
 
     [

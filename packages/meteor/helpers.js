@@ -1,11 +1,18 @@
-import { Meteor } from './client_environment.js';
+
+/**
+ * @summary `Meteor.release` is a string containing the name of the [release](#meteorupdate) with which the project was built (for example, `"1.2.3"`). It is `undefined` if the project was built using a git checkout of Meteor.
+ * @locus Anywhere
+ * @type {String}
+ */
+export const Meteor$release = __meteor_runtime_config__.meteorRelease;
+
 // XXX find a better home for these? Ideally they would be _.get,
 // _.ensure, _.delete..
 
 // _get(a,b,c,d) returns a[b][c][d], or else undefined if a[b] or
 // a[b][c] doesn't exist.
 //
-Meteor._get = function (obj /*, arguments */) {
+export const Meteor$_get = function (obj /*, arguments */) {
   for (var i = 1; i < arguments.length; i++) {
     if (!(arguments[i] in obj))
       return undefined;
@@ -17,7 +24,7 @@ Meteor._get = function (obj /*, arguments */) {
 // _ensure(a,b,c,d) ensures that a[b][c][d] exists. If it does not,
 // it is created and set to {}. Either way, it is returned.
 //
-Meteor._ensure = function (obj /*, arguments */) {
+export const Meteor$_ensure = function (obj /*, arguments */) {
   for (var i = 1; i < arguments.length; i++) {
     var key = arguments[i];
     if (!(key in obj))
@@ -31,7 +38,7 @@ Meteor._ensure = function (obj /*, arguments */) {
 // _delete(a, b, c, d) deletes a[b][c][d], then a[b][c] unless it
 // isn't empty, then a[b] unless it isn't empty.
 //
-Meteor._delete = function (obj /*, arguments */) {
+export const Meteor$_delete = function (obj /*, arguments */) {
   var stack = [obj];
   var leaf = true;
   for (var i = 1; i < arguments.length - 1; i++) {
@@ -70,7 +77,7 @@ Meteor._delete = function (obj /*, arguments */) {
  * @param {Boolean} [errorFirst] - If the callback follows the errorFirst style, default to true
  * @returns {function(...[*]): Promise<unknown>}
  */
-Meteor.promisify = function (fn, context, errorFirst) {
+export const Meteor$promisify = function (fn, context, errorFirst) {
   if (errorFirst === undefined) {
     errorFirst = true;
   }
@@ -102,54 +109,8 @@ Meteor.promisify = function (fn, context, errorFirst) {
   };
 };
 
-// wrapAsync can wrap any function that takes some number of arguments that
-// can't be undefined, followed by some optional arguments, where the callback
-// is the last optional argument.
-// e.g. fs.readFile(pathname, [callback]),
-// fs.open(pathname, flags, [mode], [callback])
-// For maximum effectiveness and least confusion, wrapAsync should be used on
-// functions where the callback is the only argument of type Function.
 
-/**
- * @memberOf Meteor
- * @summary Wrap a function that takes a callback function as its final parameter.
- * The signature of the callback of the wrapped function should be `function(error, result){}`.
- * On the server, the wrapped function can be used either synchronously (without passing a callback) or asynchronously
- * (when a callback is passed). On the client, a callback is always required; errors will be logged if there is no callback.
- * If a callback is provided, the environment captured when the original function was called will be restored in the callback.
- * The parameters of the wrapped function must not contain any optional parameters or be undefined, as the callback function is expected to be the final, non-undefined parameter.
- * @locus Anywhere
- * @param {Function} func A function that takes a callback as its final parameter
- * @param {Object} [context] Optional `this` object against which the original function will be invoked
- */
-Meteor.wrapAsync = function (fn, context) {
-  return function (/* arguments */) {
-    var self = context || this;
-    var newArgs = Array.prototype.slice.call(arguments);
-    var callback;
-
-    for (var i = newArgs.length - 1; i >= 0; --i) {
-      var arg = newArgs[i];
-      var type = typeof arg;
-      if (type !== "undefined") {
-        if (type === "function") {
-          callback = arg;
-        }
-        break;
-      }
-    }
-
-    if (! callback) {
-      callback = logErr;
-      ++i; // Insert the callback just after arg.
-    }
-
-    newArgs[i] = Meteor.bindEnvironment(callback);
-    return fn.apply(self, newArgs);
-  };
-};
-
-Meteor.wrapFn = function (fn) {
+export const Meteor$wrapFn = function (fn) {
   return fn;
 };
 
@@ -159,7 +120,7 @@ Meteor.wrapFn = function (fn) {
 //   _.extend(ClassB.prototype, { ... })
 // Inspired by CoffeeScript's `extend` and Google Closure's `goog.inherits`.
 var hasOwn = Object.prototype.hasOwnProperty;
-Meteor._inherits = function (Child, Parent) {
+export const Meteor$_inherits = function (Child, Parent) {
   // copy Parent static properties
   for (var key in Parent) {
     // make sure we only copy hasOwnProperty properties vs. prototype
@@ -184,12 +145,12 @@ var warnedAboutWrapAsync = false;
 /**
  * @deprecated in 0.9.3
  */
-Meteor._wrapAsync = function(fn, context) {
+export const Meteor$_wrapAsync = function(fn, context) {
   if (! warnedAboutWrapAsync) {
     Meteor._debug("Meteor._wrapAsync has been renamed to Meteor.wrapAsync");
     warnedAboutWrapAsync = true;
   }
-  return Meteor.wrapAsync.apply(Meteor, arguments);
+  return Meteor$wrapAsync(fn, context);
 };
 
 function logErr(err) {

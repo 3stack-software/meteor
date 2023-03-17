@@ -10,40 +10,28 @@ import clone from 'lodash.clone';
  * NOTE: the public API methods must be run within a fiber. If you call
  * these outside of a fiber they will explode!
  */
-
-const path = require("path");
-const util = require("util");
-
-/** @type {import('mongodb')} */
-var MongoDB = NpmModuleMongodb;
-import { DocFetcher } from "./doc_fetcher.js";
+import MongoDB from 'mongodb'
+import path from 'path';
+import Future from 'fibers/future';
 import {
   ASYNC_CURSOR_METHODS,
   CLIENT_ONLY_METHODS,
   getAsyncMethodName
 } from "meteor/minimongo/constants";
-import { Meteor } from "meteor/meteor";
-
-MongoInternals = {};
-
-MongoInternals.__packageName = 'mongo';
-
-MongoInternals.NpmModules = {
-  mongodb: {
-    version: NpmModuleMongodbVersion,
-    module: MongoDB
-  }
-};
-
-// Older version of what is now available via
-// MongoInternals.NpmModules.mongodb.module.  It was never documented, but
-// people do use it.
-// XXX COMPAT WITH 1.0.3.2
-MongoInternals.NpmModule = MongoDB;
+import { DocFetcher } from './doc_fetcher.js';
+import { OplogHandle } from './oplog_tailing.js';
+import { ObserveHandle, ObserveMultiplexer } from './observe_multiplex.js';
+import { PollingObserveDriver } from './polling_observe_driver.js';
+import { OplogObserveDriver } from './oplog_observe_driver.js';
+import { getConnectionOptions } from "./connection_options.js";
+import { publishCursor, rewriteSelector } from './collection_util.js';
 
 const FILE_ASSET_SUFFIX = 'Asset';
 const ASSETS_FOLDER = 'assets';
 const APP_FOLDER = 'app';
+
+
+export const OPLOG_COLLECTION = 'oplog.rs';
 
 // This is used to add or remove EJSON from the beginning of everything nested
 // inside an EJSON custom type. It should only be called on pure JSON!
@@ -82,7 +70,7 @@ var replaceMongoAtomWithMeteor = function (document) {
     return new Uint8Array(buffer);
   }
   if (document instanceof MongoDB.ObjectID) {
-    return new Mongo.ObjectID(document.toHexString());
+    return new MongoID.ObjectID(document.toHexString());
   }
   if (document instanceof MongoDB.Decimal128) {
     return Decimal(document.toString());
@@ -110,7 +98,7 @@ var replaceMeteorAtomWithMongo = function (document) {
   if (document instanceof MongoDB.Binary) {
      return document;
   }
-  if (document instanceof Mongo.ObjectID) {
+  if (document instanceof MongoID.ObjectID) {
     return new MongoDB.ObjectID(document.toHexString());
   }
   if (document instanceof MongoDB.Timestamp) {
@@ -153,14 +141,14 @@ var replaceTypes = function (document, atomTransformer) {
 };
 
 
-MongoConnection = function (url, options) {
+export const MongoConnection = function (url, options) {
   var self = this;
   options = options || {};
   self._observeMultiplexers = {};
   self._onFailoverHook = new Hook;
 
   const userOptions = {
-    ...(Mongo._connectionOptions || {}),
+    ...getConnectionOptions(),
     ...(Meteor.settings?.packages?.mongo?.options || {})
   };
 
@@ -219,7 +207,7 @@ MongoConnection = function (url, options) {
     }
   }));
 
-  if (options.oplogUrl && ! Package['disable-oplog']) {
+  if (!Package['disable-oplog'] && options.oplogUrl) {
     self._oplogHandle = new OplogHandle(options.oplogUrl, self.db.databaseName);
     self._docFetcher = new DocFetcher(self);
   }
@@ -859,14 +847,14 @@ CLIENT_ONLY_METHODS.forEach(function (m) {
 // they start sending observeChanges callbacks (and a ready() invocation) to
 // their ObserveMultiplexer, and you stop them by calling their stop() method.
 
-CursorDescription = function (collectionName, selector, options) {
+export const CursorDescription = function (collectionName, selector, options) {
   var self = this;
   self.collectionName = collectionName;
-  self.selector = Mongo.Collection._rewriteSelector(selector);
+  self.selector = rewriteSelector(selector);
   self.options = options || {};
 };
 
-Cursor = function (mongo, cursorDescription) {
+export const Cursor = function (mongo, cursorDescription) {
   var self = this;
 
   self._mongo = mongo;
@@ -945,7 +933,7 @@ Cursor.prototype.getTransform = function () {
 Cursor.prototype._publishCursor = function (sub) {
   var self = this;
   var collection = self._cursorDescription.collectionName;
-  return Mongo.Collection._publishCursor(self, sub, collection);
+  return publishCursor(self, sub, collection);
 };
 
 // Used to guarantee that publish functions return at most one cursor per
@@ -1612,7 +1600,7 @@ Object.assign(MongoConnection.prototype, {
 // listenCallback is the same kind of (notification, complete) callback passed
 // to InvalidationCrossbar.listen.
 
-listenAll = async function (cursorDescription, listenCallback) {
+export async function listenAll (cursorDescription, listenCallback) {
   const listeners = [];
   await forEachTrigger(cursorDescription, function (trigger) {
     listeners.push(DDPServer._InvalidationCrossbar.listen(
@@ -1626,9 +1614,9 @@ listenAll = async function (cursorDescription, listenCallback) {
       });
     }
   };
-};
+}
 
-forEachTrigger = async function (cursorDescription, triggerCallback) {
+export const forEachTrigger = async function (cursorDescription, triggerCallback) {
   const key = {collection: cursorDescription.collectionName};
   const specificIds = LocalCollection._idsMatchedBySelector(
     cursorDescription.selector);
@@ -1697,10 +1685,3 @@ MongoConnection.prototype._observeChangesTailable = function (
     }
   });
 };
-
-// XXX We probably need to find a better way to expose this. Right now
-// it's only used by tests, but in fact you need it in normal
-// operation to interact with capped collections.
-MongoInternals.MongoTimestamp = MongoDB.Timestamp;
-
-MongoInternals.Connection = MongoConnection;

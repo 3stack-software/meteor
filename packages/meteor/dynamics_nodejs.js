@@ -108,7 +108,7 @@ class EnvironmentVariableAsync {
  * @locus Anywhere
  * @class
  */
-Meteor.EnvironmentVariable = EnvironmentVariableAsync;
+export const Meteor$EnvironmentVariable = EnvironmentVariableAsync;
 
 // Meteor application code is always supposed to be run inside a
 // fiber. bindEnvironment ensures that the function it wraps is run from
@@ -144,7 +144,7 @@ Meteor.EnvironmentVariable = EnvironmentVariableAsync;
  * @param {Object} _this Optional `this` object against which the original function will be invoked
  * @return {Function} The wrapped function
  */
-Meteor.bindEnvironment = (func, onException, _this) => {
+export const Meteor$bindEnvironment = (func, onException, _this) => {
   const dynamics = Meteor._getValueFromAslStore(CURRENT_VALUE_KEY_NAME);
   const currentSlot = Meteor._getValueFromAslStore(SLOT_CALL_KEY);
 

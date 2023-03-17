@@ -1,5 +1,5 @@
 import {URL, constructUrl, encodeParams } from 'meteor/url';
-import { HTTP } from './httpcall_common.js';
+import { HTTP, populateData, makeErrorByStatus } from './httpcall_common.js';
 
 /**
  * @summary Perform an outbound HTTP request.
@@ -171,11 +171,11 @@ HTTP.call = function(method, url, options, callback) {
             }
           });
 
-          common.populateData(response);
+          populateData(response);
 
           var error = null;
           if (response.statusCode >= 400) {
-            error = common.makeErrorByStatus(
+            error = makeErrorByStatus(
               response.statusCode,
               response.content
             );
@@ -201,6 +201,5 @@ HTTP.call = function(method, url, options, callback) {
     callback(err);
   }
 };
-
 
 export { HTTP };

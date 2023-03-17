@@ -1,4 +1,3 @@
-import { Meteor } from 'meteor/meteor';
 import { DDPCommon } from 'meteor/ddp-common';
 import { Tracker } from 'meteor/tracker';
 import { EJSON } from 'meteor/ejson';
@@ -15,7 +14,9 @@ import {
   isEmpty,
   last,
 } from "meteor/ddp-common/utils.js";
+import { ClientStream } from 'meteor/socket-stream-client';
 
+export const _reconnectHook = new Hook({ bindEnvironment: false });
 class MongoIDMap extends IdMap {
   constructor() {
     super(MongoID.idStringify, MongoID.idParse);
@@ -1801,6 +1802,15 @@ export class Connection {
 
   _sendOutstandingMethodBlocksMessages(oldOutstandingMethodBlocks) {
     const self = this;
+    const oldOutstandingMethodBlocks = self._outstandingMethodBlocks;
+    self._outstandingMethodBlocks = [];
+
+    self.onReconnect && self.onReconnect();
+    _reconnectHook.each(callback => {
+      callback(self);
+      return true;
+    });
+
     if (isEmpty(oldOutstandingMethodBlocks)) return;
 
     // We have at least one block worth of old outstanding methods to try

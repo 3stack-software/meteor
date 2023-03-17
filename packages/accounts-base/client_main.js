@@ -1,7 +1,6 @@
 import 'meteor/localstorage';
 import {
   AccountsClient,
-  AccountsTest,
 } from "./accounts_client.js";
 
 /**
@@ -16,13 +15,14 @@ const Accounts = new AccountsClient(Meteor.settings?.public?.packages?.accounts 
  * @type {Mongo.Collection}
  * @importFromPackage meteor
  */
-Meteor.users = Accounts.users;
+export const Meteor$users = Accounts.users;
+
 /**
  * @summary Get the current user id, or `null` if no user is logged in. A reactive data source.
  * @locus Anywhere but publish functions
  * @importFromPackage meteor
  */
-Meteor.userId = () => Accounts.userId();
+export const Meteor$userId = () => Accounts.userId();
 
 /**
  * @summary Get the current user record, or `null` if no user is logged in. A reactive data source.
@@ -31,7 +31,16 @@ Meteor.userId = () => Accounts.userId();
  * @param {Object} [options]
  * @param {MongoFieldSpecifier} options.fields Dictionary of fields to return or exclude.
  */
-Meteor.user = options => Accounts.user(options);
+export const Meteor$user = options => Accounts.user(options);
+
+/**
+ * @summary Get the current user record, or `null` if no user is logged in. A reactive data source.
+ * @locus Anywhere but publish functions
+ * @importFromPackage meteor
+ * @param {Object} [options]
+ * @param {MongoFieldSpecifier} options.fields Dictionary of fields to return or exclude.
+ */
+export const Meteor$userAsync = options => Accounts.userAsync(options);
 
 /**
  * @summary True if a login method (such as `Meteor.loginWithPassword`,
@@ -40,7 +49,7 @@ Meteor.user = options => Accounts.user(options);
  * @locus Client
  * @importFromPackage meteor
  */
-Meteor.loggingIn = () => Accounts.loggingIn();
+export const Meteor$loggingIn = () => Accounts.loggingIn();
 
 /**
  * @summary True if a logout method (such as `Meteor.logout`) is currently in
@@ -48,7 +57,7 @@ Meteor.loggingIn = () => Accounts.loggingIn();
  * @locus Client
  * @importFromPackage meteor
  */
-Meteor.loggingOut = () => Accounts.loggingOut();
+export const Meteor$loggingOut = () => Accounts.loggingOut();
 
 /**
  * @summary Log the user out.
@@ -56,7 +65,7 @@ Meteor.loggingOut = () => Accounts.loggingOut();
  * @param {Function} [callback] Optional callback. Called with no arguments on success, or with a single `Error` argument on failure.
  * @importFromPackage meteor
  */
-Meteor.logout = callback => Accounts.logout(callback);
+export const Meteor$logout = callback => Accounts.logout(callback);
 
 /**
  * @summary Log out other clients logged in as the current user, but does not log out the client that calls this function.
@@ -64,7 +73,7 @@ Meteor.logout = callback => Accounts.logout(callback);
  * @param {Function} [callback] Optional callback. Called with no arguments on success, or with a single `Error` argument on failure.
  * @importFromPackage meteor
  */
-Meteor.logoutOtherClients = callback => Accounts.logoutOtherClients(callback);
+export const Meteor$logoutOtherClients = callback => Accounts.logoutOtherClients(callback);
 
 /**
  * @summary Login with a Meteor access token.
@@ -75,11 +84,60 @@ Meteor.logoutOtherClients = callback => Accounts.logoutOtherClients(callback);
  * success.
  * @importFromPackage meteor
  */
-Meteor.loginWithToken = (token, callback) =>
+export const Meteor$loginWithToken = (token, callback) =>
   Accounts.loginWithToken(token, callback);
+
+///
+/// HANDLEBARS HELPERS
+///
+
+// If our app has a Blaze, register the {{currentUser}} and {{loggingIn}}
+// global helpers.
+if (Package.blaze) {
+  const { Template } = Package.blaze.Blaze;
+
+  /**
+   * @global
+   * @name  currentUser
+   * @isHelper true
+   * @summary Calls [Meteor.user()](#meteor_user). Use `{{#if currentUser}}` to check whether the user is logged in.
+   */
+  Template.registerHelper('currentUser', () => Meteor.user());
+
+  // TODO: the code above needs to be changed to Meteor.userAsync() when we have
+  // a way to make it reactive using async.
+  // Template.registerHelper('currentUserAsync',
+  //  async () => await Meteor.userAsync());
+
+  /**
+   * @global
+   * @name  loggingIn
+   * @isHelper true
+   * @summary Calls [Meteor.loggingIn()](#meteor_loggingin).
+   */
+  Template.registerHelper('loggingIn', () => Meteor.loggingIn());
+
+  /**
+   * @global
+   * @name  loggingOut
+   * @isHelper true
+   * @summary Calls [Meteor.loggingOut()](#meteor_loggingout).
+   */
+  Template.registerHelper('loggingOut', () => Meteor.loggingOut());
+
+  /**
+   * @global
+   * @name  loggingInOrOut
+   * @isHelper true
+   * @summary Calls [Meteor.loggingIn()](#meteor_loggingin) or [Meteor.loggingOut()](#meteor_loggingout).
+   */
+  Template.registerHelper(
+    'loggingInOrOut',
+    () => Meteor.loggingIn() || Meteor.loggingOut()
+  );
+}
 
 export {
   Accounts,
   AccountsClient,
-  AccountsTest,
 };

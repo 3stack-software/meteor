@@ -1,5 +1,11 @@
-import { Meteor } from 'meteor/meteor';
-
+const _prettify = Meteor.isClient ?
+  function (line, color) {
+    return line;
+  } :
+  function (line, color) {
+    if (!color) return line;
+    return require("chalk")[color](line);
+  }
 const hasOwn = Object.prototype.hasOwnProperty;
 
 function Log(...args) {
@@ -315,8 +321,8 @@ Log.format = (obj, options = {}) => {
     stderrIndicator].join('');
 
 
-  return prettify(metaPrefix, options.color && platformColor(options.metaColor || META_COLOR)) +
-      prettify(message, options.color && platformColor(LEVEL_COLORS[level]));
+  return _prettify(metaPrefix, options.color && platformColor(options.metaColor || META_COLOR)) +
+      _prettify(message, options.color && platformColor(LEVEL_COLORS[level]));
 };
 
 // Turn a line of text into a loggable object.

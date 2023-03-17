@@ -763,70 +763,7 @@ export class AccountsClient extends AccountsCommon {
     this._accountsCallbacks["enroll-account"] = callback;
   };
 
-}
-
-///
-/// HANDLEBARS HELPERS
-///
-
-// If our app has a Blaze, register the {{currentUser}} and {{loggingIn}}
-// global helpers.
-if (Package.blaze) {
-  const { Template } = Package.blaze.Blaze;
-
-  /**
-   * @global
-   * @name  currentUser
-   * @isHelper true
-   * @summary Calls [Meteor.user()](#meteor_user). Use `{{#if currentUser}}` to check whether the user is logged in.
-   */
-  Template.registerHelper('currentUser', () => Meteor.user());
-
-  // TODO: the code above needs to be changed to Meteor.userAsync() when we have
-  // a way to make it reactive using async.
-  // Template.registerHelper('currentUserAsync',
-  //  async () => await Meteor.userAsync());
-
-  /**
-   * @global
-   * @name  loggingIn
-   * @isHelper true
-   * @summary Calls [Meteor.loggingIn()](#meteor_loggingin).
-   */
-  Template.registerHelper('loggingIn', () => Meteor.loggingIn());
-
-  /**
-   * @global
-   * @name  loggingOut
-   * @isHelper true
-   * @summary Calls [Meteor.loggingOut()](#meteor_loggingout).
-   */
-  Template.registerHelper('loggingOut', () => Meteor.loggingOut());
-
-  /**
-   * @global
-   * @name  loggingInOrOut
-   * @isHelper true
-   * @summary Calls [Meteor.loggingIn()](#meteor_loggingin) or [Meteor.loggingOut()](#meteor_loggingout).
-   */
-  Template.registerHelper(
-    'loggingInOrOut',
-    () => Meteor.loggingIn() || Meteor.loggingOut()
-  );
-}
-
-const defaultSuccessHandler = function(token, urlPart) {
-  // put login in a suspended state to wait for the interaction to finish
-  this._autoLoginEnabled = false;
-
-  // wait for other packages to register callbacks
-  Meteor.startup(() => {
-    // if a callback has been registered for this kind of token, call it
-    if (this._accountsCallbacks[urlPart]) {
-      this._accountsCallbacks[urlPart](token, () => this._enableAutoLogin());
-    }
-  });
-}
+};
 
 // Note that both arguments are optional and are currently only passed by
 // accounts_url_tests.js.
@@ -865,8 +802,15 @@ const attemptToMatchHash = (accounts, hash, success) => {
   });
 }
 
-// Export for testing
-export const AccountsTest = {
-  attemptToMatchHash: (hash, success) =>
-    attemptToMatchHash(Accounts, hash, success),
-};
+const defaultSuccessHandler = function(token, urlPart) {
+  // put login in a suspended state to wait for the interaction to finish
+  this._autoLoginEnabled = false;
+
+  // wait for other packages to register callbacks
+  Meteor.startup(() => {
+    // if a callback has been registered for this kind of token, call it
+    if (this._accountsCallbacks[urlPart]) {
+      this._accountsCallbacks[urlPart](token, () => this._enableAutoLogin());
+    }
+  });
+}
