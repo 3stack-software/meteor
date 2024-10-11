@@ -1128,9 +1128,9 @@ Object.assign(Mongo.Collection.prototype, {
         ) &&
         Meteor.settings?.packages?.mongo?.reCreateIndexOnOptionMismatch
       ) {
-        import { Log } from 'meteor/logging';
+        // import { Log } from 'meteor/logging';
 
-        Log.info(`Re-creating index ${ index } for ${ self._name } due to options mismatch.`);
+        // Log.info(`Re-creating index ${ index } for ${ self._name } due to options mismatch.`);
         await self._collection.dropIndexAsync(index);
         await self._collection.createIndexAsync(index, options);
       } else {

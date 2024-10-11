@@ -1,6 +1,7 @@
 import alias from '@rollup/plugin-alias';
 import replace from '@rollup/plugin-replace';
 import inject from '@rollup/plugin-inject';
+import commonjs from '@rollup/plugin-commonjs';
 import path from 'node:path';
 
 const projectRootDir = path.resolve(__dirname);
@@ -75,6 +76,7 @@ export default [
       'decimal.js',
     ],
     plugins: [
+      commonjs(),
       replace({
         preventAssignment: true,
         values: {
