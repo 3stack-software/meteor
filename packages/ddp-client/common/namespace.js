@@ -1,4 +1,14 @@
 import { _reconnectHook, Connection } from './livedata_connection.js';
+export { _reconnectHook } from './livedata_connection.js';
+export {
+  // This is private but it's used in a few places. accounts-base uses
+  // it to get the current user. Meteor.setTimeout and friends clear
+  // it. We can probably find a better way to factor this.
+  CurrentMethodInvocation as _CurrentMethodInvocation,
+  CurrentPublicationInvocation as _CurrentPublicationInvocation,
+  // XXX: Keep DDP$_CurrentInvocation for backwards-compatibility.
+  CurrentMethodInvocation as _CurrentInvocation,
+} from './environment.js';
 import { CurrentMethodInvocation, CurrentPublicationInvocation } from './environment.js';
 import { ConnectionError, ForcedReconnectError } from './errors.js';
 import { randomStream } from './random_stream.js';

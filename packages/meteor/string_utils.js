@@ -1,5 +1,3 @@
-import { Meteor } from './client_environment.js';
-
 // Like Perl's quotemeta: quotes all regexp metacharacters.
 // Code taken from
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions

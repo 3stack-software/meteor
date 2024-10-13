@@ -1,5 +1,4 @@
 import { CurrentMethodInvocation } from 'meteor/ddp-client/common/environment.js';
-import { Meteor } from './client_environment.js';
 
 function withoutInvocation(f) {
   var invocation = CurrentMethodInvocation.get();

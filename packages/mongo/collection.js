@@ -1,16 +1,7 @@
-// options.connection, if given, is a LivedataClient or LivedataServer
-// XXX presently there is no way to destroy/clean up a Collection
-import { Log } from 'meteor/logging';
-import {
-  ASYNC_COLLECTION_METHODS,
-  getAsyncMethodName,
-} from 'meteor/minimongo/constants';
-
 import { LocalCollectionDriver } from './local_collection_driver.js';
 import { defaultRemoteCollectionDriver } from './remote_collection_driver.js';
 import { publishCursor, rewriteSelector } from './collection_util.js';
 import { normalizeProjection } from "./mongo_utils";
-import { LocalCollectionDriver } from './local_collection_driver.js';
 
 export function warnUsingOldApi (
     methodName,

@@ -1,4 +1,4 @@
-import { Meteor } from './client_environment.js';
+// import { waitUntilAllLoaded } from "../core-runtime/load-js-image";
 
 var callbackQueue = [];
 var isLoadingCompleted = false;
@@ -41,7 +41,7 @@ function waitForEagerAsyncModules () {
     maybeReady();
   }
 
-  var potentialPromise = Package['core-runtime'].waitUntilAllLoaded();
+  var potentialPromise = null;//waitUntilAllLoaded();
 
   if (potentialPromise === null) {
     finish();

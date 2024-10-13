@@ -5,8 +5,7 @@ export {
 } from './packages/meteor/debug.js';
 export {
   Meteor$EnvironmentVariable as EnvironmentVariable,
-  Meteor$bindEnvironment as bindEnvironment,
-  Meteor$_nodeCodeMustBeInFiber as _nodeCodeMustBeInFiber,
+  Meteor$bindEnvironment as bindEnvironment
 } from './packages/meteor/dynamics_nodejs.js';
 export {
   Meteor$release as release,
@@ -14,9 +13,7 @@ export {
   Meteor$_ensure as _ensure,
   Meteor$_delete as _delete,
   Meteor$promisify as promisify,
-  Meteor$wrapAsync as wrapAsync,
-  Meteor$_inherits as _inherits,
-  Meteor$_wrapAsync as _wrapAsync,
+  Meteor$_inherits as _inherits
 } from './packages/meteor/helpers.js';
 export { Meteor$wrapFn as wrapFn } from './packages/meteor/helpers_wrapfn.js';
 export {
@@ -33,11 +30,6 @@ export {
 export { Meteor$_setImmediate as _setImmediate } from './packages/meteor/setimmediate.js';
 export const _localStorage = undefined;
 export { Meteor$startup as startup, Meteor$runStartup as runStartup } from './packages/meteor/startup_server.js';
-export {
-  Meteor$_noYieldsAllowed as _noYieldsAllowed,
-  Meteor$_SynchronousQueue as _SynchronousQueue,
-  Meteor$_sleepForMs as _sleepForMs,
-} from './packages/meteor/fiber_helpers.js';
 export { default as _DoubleEndedQueue } from 'denque';
 export {
   Meteor$absoluteUrl as absoluteUrl,

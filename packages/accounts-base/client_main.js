@@ -102,7 +102,7 @@ if (Package.blaze) {
    * @isHelper true
    * @summary Calls [Meteor.user()](#meteor_user). Use `{{#if currentUser}}` to check whether the user is logged in.
    */
-  Template.registerHelper('currentUser', () => Meteor.user());
+  Template.registerHelper('currentUser', () => Meteor$user());
 
   // TODO: the code above needs to be changed to Meteor.userAsync() when we have
   // a way to make it reactive using async.
@@ -115,7 +115,7 @@ if (Package.blaze) {
    * @isHelper true
    * @summary Calls [Meteor.loggingIn()](#meteor_loggingin).
    */
-  Template.registerHelper('loggingIn', () => Meteor.loggingIn());
+  Template.registerHelper('loggingIn', () => Meteor$loggingIn());
 
   /**
    * @global
@@ -123,7 +123,7 @@ if (Package.blaze) {
    * @isHelper true
    * @summary Calls [Meteor.loggingOut()](#meteor_loggingout).
    */
-  Template.registerHelper('loggingOut', () => Meteor.loggingOut());
+  Template.registerHelper('loggingOut', () => Meteor$loggingOut());
 
   /**
    * @global
@@ -133,7 +133,7 @@ if (Package.blaze) {
    */
   Template.registerHelper(
     'loggingInOrOut',
-    () => Meteor.loggingIn() || Meteor.loggingOut()
+    () => Meteor$loggingIn() || Meteor$loggingOut()
   );
 }
 

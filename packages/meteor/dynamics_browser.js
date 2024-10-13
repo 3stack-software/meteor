@@ -1,4 +1,3 @@
-import { Meteor } from './client_environment.js';
 import { EnvironmentVariable, getEnvironment, setEnvironment } from './dynamics_browser_ev.js';
 // Simple implementation of dynamic scoping, for use in browsers
 
@@ -51,8 +50,6 @@ EVp._isCallAsyncMethodRunning = function () {
 EVp._setCallAsyncMethodRunning = function (value) {
   callAsyncMethodRunning = value;
 };
-
-Meteor.EnvironmentVariable = EnvironmentVariable;
 
 export const Meteor$bindEnvironment = function (func, onException, _this) {
   // needed in order to be able to create closures inside func and

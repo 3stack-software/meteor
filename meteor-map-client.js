@@ -5,8 +5,7 @@ export {
 } from './packages/meteor/debug.js';
 export {
   Meteor$EnvironmentVariable as EnvironmentVariable,
-  Meteor$bindEnvironment as bindEnvironment,
-  Meteor$_nodeCodeMustBeInFiber as _nodeCodeMustBeInFiber,
+  Meteor$bindEnvironment as bindEnvironment
 } from './packages/meteor/dynamics_browser.js';
 export {
   Meteor$release as release,
@@ -14,9 +13,7 @@ export {
   Meteor$_ensure as _ensure,
   Meteor$_delete as _delete,
   Meteor$promisify as promisify,
-  Meteor$wrapAsync as wrapAsync,
-  Meteor$_inherits as _inherits,
-  Meteor$_wrapAsync as _wrapAsync,
+  Meteor$_inherits as _inherits
 } from './packages/meteor/helpers.js';
 export { Meteor$wrapFn as wrapFn } from './packages/meteor/helpers_wrapfn.js';
 export {
@@ -34,7 +31,6 @@ export { Meteor$_setImmediate as _setImmediate } from './packages/meteor/setimme
 export { Meteor$_localStorage as _localStorage } from 'meteor/localstorage';
 export { Meteor$startup as startup } from './packages/meteor/startup_client.js';
 export {
-  Meteor$_noYieldsAllowed as _noYieldsAllowed,
   Meteor$_SynchronousQueue as _SynchronousQueue,
 } from './packages/meteor/fiber_stubs_client.js';
 export {
@@ -43,7 +39,7 @@ export {
 } from './packages/meteor/url_common.js';
 
 export { Meteor$_escapeRegExp as _escapeRegExp } from './packages/meteor/string_utils.js';
-export const _DoubleEndedQueue = undefined;
+// export const _DoubleEndedQueue = undefined;
 export const _sleepForMs = undefined;
 export {
   Meteor$refresh as refresh,

@@ -16,7 +16,7 @@ const MeteorClientNamespace = [
   },
   {
     path: 'packages/meteor/dynamics_browser.js',
-    names: ['EnvironmentVariable', 'bindEnvironment', '_nodeCodeMustBeInFiber'],
+    names: ['EnvironmentVariable', 'bindEnvironment'],
   },
   {
     path: 'packages/meteor/helpers.js',
@@ -63,7 +63,7 @@ const MeteorClientNamespace = [
   },
   {
     path: 'packages/meteor/fiber_stubs_client.js',
-    names: ['_noYieldsAllowed', '_SynchronousQueue'],
+    names: ['_SynchronousQueue'],
   },
   {
     path: 'packages/meteor/url_common.js',
@@ -117,6 +117,27 @@ const MeteorClientNamespace = [
       'settings',
     ],
   },
+  {
+    path: 'packages/meteor/asl-helpers.js',
+    names: [
+      '_getAsl',
+      '_getAslStore',
+      '_getValueFromAslStore',
+      '_updateAslStore',
+      '_runFresh',
+      '_runAsync',
+      '_isPromise'
+    ]
+  },
+  {
+    path: 'packages/meteor/async_helpers.js',
+    names: [
+      '_AsynchronousQueue',
+      '_DoubleEndedQueue',
+      '_noYieldsAllowed',
+      '_sleepForMs'
+    ]
+  }
 ];
 
 const MeteorServerNamespace = [
@@ -126,7 +147,7 @@ const MeteorServerNamespace = [
   },
   {
     path: 'packages/meteor/dynamics_nodejs.js',
-    names: ['EnvironmentVariable', 'bindEnvironment', '_nodeCodeMustBeInFiber'],
+    names: ['EnvironmentVariable', 'bindEnvironment', ''],
   },
   {
     path: 'packages/meteor/helpers.js',
@@ -220,6 +241,26 @@ const MeteorServerNamespace = [
       'settings',
     ],
   },
+  {
+    path: 'packages/meteor/asl-helpers.js',
+    names: [
+      '_getAsl',
+      '_getAslStore',
+      '_getValueFromAslStore',
+      '_updateAslStore',
+      '_runFresh',
+      '_runAsync',
+      '_isPromise'
+    ]
+  },
+  {
+    path: 'packages/meteor/async_helpers.js',
+    names: [
+      '_AsynchronousQueue',
+      '_noYieldsAllowed',
+      '_sleepForMs'
+    ]
+  }
 ];
 
 const StaticsShared = [

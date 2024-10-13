@@ -2,11 +2,11 @@
 // import Fibers from 'fibers';
 import { setMinimumBrowserVersions } from 'meteor/modern-browsers';
 
-// const Promise = globalThis.Promise;
+const Promise = globalThis.Promise;
 
 // makeCompatible(Promise, Fibers);
 
-// export { Promise };
+export { Promise };
 
 // Reference: https://caniuse.com/#feat=promises
 setMinimumBrowserVersions({

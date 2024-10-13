@@ -1,12 +1,11 @@
-import { Meteor$bindEnvironment } from "./dynamics_browser.js";
 // This file is a partial analogue to fiber_helpers.js, which allows the client
 // to use a queue too, and also to call noYieldsAllowed.
 
 // The client has no ability to yield, so noYieldsAllowed is a noop.
 //
-export const Meteor$_noYieldsAllowed = function (f) {
-  return f();
-};
+// export const Meteor$_noYieldsAllowed = function (f) {
+//   return f();
+// };
 
 // An even simpler queue of tasks than the fiber-enabled one.  This one just
 // runs all the tasks when you call runTask or flush, synchronously.

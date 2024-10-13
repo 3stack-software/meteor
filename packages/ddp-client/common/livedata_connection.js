@@ -14,7 +14,6 @@ import {
   isEmpty,
   last,
 } from "meteor/ddp-common/utils.js";
-import { ClientStream } from 'meteor/socket-stream-client';
 
 export const _reconnectHook = new Hook({ bindEnvironment: false });
 class MongoIDMap extends IdMap {
@@ -1800,7 +1799,7 @@ export class Connection {
     if (msg.offendingMessage) Meteor._debug('For: ', msg.offendingMessage);
   }
 
-  _sendOutstandingMethodBlocksMessages(oldOutstandingMethodBlocks) {
+  _sendOutstandingMethodBlocksMessages() {
     const self = this;
     const oldOutstandingMethodBlocks = self._outstandingMethodBlocks;
     self._outstandingMethodBlocks = [];

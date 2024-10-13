@@ -283,7 +283,7 @@ export class AccountsCommon {
     for (const key of VALID_CONFIG_KEYS) {
       if (key in options) {
         if (key in this._options) {
-          if (key !== 'collection' && (Meteor.isTest && key !== 'clientStorage')) {
+          if (key !== 'collection' && (false && key !== 'clientStorage')) {
             throw new Meteor.Error(`Can't set \`${key}\` more than once`);
           }
         }

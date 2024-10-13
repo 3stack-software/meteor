@@ -341,7 +341,7 @@ const renderEndOfLoginResponse = async options => {
   };
 
   if (options.loginStyle === 'popup') {
-    template = awaitOAuth$_endOfPopupResponseTemplate();
+    template = await OAuth$_endOfPopupResponseTemplate();
   } else if (options.loginStyle === 'redirect') {
     template = await OAuth$_endOfRedirectResponseTemplate();
   } else {

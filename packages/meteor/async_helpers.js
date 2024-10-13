@@ -1,4 +1,4 @@
-Meteor._noYieldsAllowed = function (f) {
+export const Meteor$_noYieldsAllowed = function (f) {
   var result = f();
   if (Meteor._isPromise(result)) {
     throw new Error("function is a promise when calling Meteor._noYieldsAllowed");
@@ -22,7 +22,7 @@ FakeDoubleEndedQueue.prototype.isEmpty = function () {
   return this.queue.length === 0;
 };
 
-Meteor._DoubleEndedQueue = Meteor.isServer ? Npm.require('denque') : FakeDoubleEndedQueue;
+export const Meteor$_DoubleEndedQueue = Meteor.isServer ? Npm.require('denque') : FakeDoubleEndedQueue;
 
 // Meteor._SynchronousQueue is a queue which runs task functions serially.
 // Tasks are assumed to be synchronous: ie, it's assumed that they are
@@ -42,7 +42,7 @@ Meteor._DoubleEndedQueue = Meteor.isServer ? Npm.require('denque') : FakeDoubleE
 //     also support multiple concurrent "read" tasks
 //
 function AsynchronousQueue () {
-  this._taskHandles = new Meteor._DoubleEndedQueue();
+  this._taskHandles = new Meteor$_DoubleEndedQueue();
   this._runningOrRunScheduled = false;
   // This is true if we're currently draining.  While we're draining, a further
   // drain is a noop, to prevent infinite loops.  "drain" is a heuristic type
@@ -161,13 +161,13 @@ Object.assign(AsynchronousQueue.prototype, {
   }
 });
 
-Meteor._AsynchronousQueue = AsynchronousQueue;
+export const Meteor$_AsynchronousQueue = AsynchronousQueue;
 
 
 // Sleep. Mostly used for debugging (eg, inserting latency into server
 // methods).
 //
 const _sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-Meteor._sleepForMs = function (ms) {
+export const Meteor$_sleepForMs = function (ms) {
   return _sleep(ms);
 };

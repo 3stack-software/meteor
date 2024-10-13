@@ -1,4 +1,4 @@
-import { Meteor } from './client_environment.js';
+
 // Chooses one of three setImmediate implementations:
 //
 // * Native setImmediate (IE 10, Node 0.9+)

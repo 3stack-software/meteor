@@ -405,5 +405,4 @@ export function listen() {
   }
 }
 
-export const expressApp = app;
 export { express }
