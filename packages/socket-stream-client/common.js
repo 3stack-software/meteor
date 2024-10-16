@@ -1,3 +1,4 @@
+import { reactive } from 'vue';
 import { Retry } from 'meteor/retry';
 
 const forcedReconnectError = new Error("forced reconnect");
@@ -50,23 +51,19 @@ export class StreamClientCommon {
     this._forcedToDisconnect = false;
 
     //// Reactive status
-    this.currentStatus = {
+    this.currentStatus = reactive({
       status: 'connecting',
       connected: false,
-      retryCount: 0
-    };
-
-    this.statusListeners = new Tracker.Dependency();
-
-    this.statusChanged = () => {
-      if (this.statusListeners) {
-        this.statusListeners.changed();
-      }
-    };
+      retryCount: 0,
+    });
 
     //// Retry logic
     this._retry = new Retry();
     this.connectionTimer = null;
+  }
+
+  statusChanged() {
+    // noop, uses vue reactive
   }
 
   // Trigger a reconnect.
@@ -117,11 +114,10 @@ export class StreamClientCommon {
     this._cleanup();
     this._retry.clear();
 
-    this.currentStatus = {
-      status: options._permanent ? 'failed' : 'offline',
-      connected: false,
-      retryCount: 0
-    };
+    this.currentStatus.status = options._permanent ? 'failed' : 'offline';
+    this.currentStatus.connected = false;
+    this.currentStatus.retryCount = 0;
+    delete this.currentStatus.retryTime;
 
     if (options._permanent && options._error)
       this.currentStatus.reason = options._error;

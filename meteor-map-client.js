@@ -33,6 +33,7 @@ export { Meteor$startup as startup } from './packages/meteor/startup_client.js';
 export {
   Meteor$_SynchronousQueue as _SynchronousQueue,
 } from './packages/meteor/fiber_stubs_client.js';
+export { Meteor$_AsynchronousQueue as _AsynchronousQueue } from './packages/meteor/async_helpers.js'
 export {
   Meteor$absoluteUrl as absoluteUrl,
   Meteor$_relativeToSiteRootUrl as _relativeToSiteRootUrl,

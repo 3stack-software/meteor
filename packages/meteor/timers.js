@@ -1,4 +1,4 @@
-import { CurrentMethodInvocation } from 'meteor/ddp-client/common/environment.js';
+import { CurrentMethodInvocation } from "../ddp-client/common/environment.js";
 
 function withoutInvocation(f) {
   var invocation = CurrentMethodInvocation.get();

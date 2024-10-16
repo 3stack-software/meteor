@@ -100,7 +100,7 @@ export function Collection(name, options) {
       break;
   }
 
-  this._transform = LocalCollection.wrapTransform(options.transform);
+    this._transform = LocalCollection.wrapTransform(options.transform);
 
   this.resolverType = options.resolverType;
 
@@ -165,7 +165,7 @@ export function Collection(name, options) {
     });
   }
 
-  Mongo._collections.set(this._name, this);
+  _collections.set(this._name, this);
 };
 
 Collection.__getCollectionByName = function(name) {
@@ -843,7 +843,7 @@ Object.assign(Collection.prototype, {
       }
     }
 
-    selector = Mongo.Collection._rewriteSelector(selector, {
+    selector = rewriteSelector(selector, {
       fallbackId: insertedId,
     });
 
@@ -950,7 +950,7 @@ Object.assign(Collection.prototype, {
    * @param {MongoSelector} selector Specifies which documents to remove
    */
   removeAsync(selector, options = {}) {
-    selector = Mongo.Collection._rewriteSelector(selector);
+    selector = rewriteSelector(selector);
 
     if (this._isRemoteCollection()) {
       return this._callMutatorMethodAsync('removeAsync', [selector], options);
@@ -1177,7 +1177,7 @@ Object.assign(Collection.prototype, {
   },
 });
 
-Object.assign(Mongo, {
+
   /**
    * @summary Retrieve a Meteor collection instance by name. Only collections defined with [`new Mongo.Collection(...)`](#collections) are available with this method. For plain MongoDB collections, you'll want to look at [`rawDatabase()`](#Mongo-Collection-rawDatabase).
    * @locus Anywhere
@@ -1186,18 +1186,17 @@ Object.assign(Mongo, {
    * @param {string} name Name of your collection as it was defined with `new Mongo.Collection()`.
    * @returns {Mongo.Collection | undefined}
    */
-  getCollection(name) {
-    return this._collections.get(name);
-  },
+export function getCollection(name) {
+  return _collections.get(name);
+}
 
-  /**
-   * @summary A record of all defined Mongo.Collection instances, indexed by collection name.
-   * @type {Map<string, Mongo.Collection>}
-   * @memberof Mongo
-   * @protected
-   */
-  _collections: new Map(),
-})
+/**
+ * @summary A record of all defined Mongo.Collection instances, indexed by collection name.
+ * @type {Map<string, Mongo.Collection>}
+ * @memberof Mongo
+ * @protected
+ */
+export const _collections = new Map()
 
 // Convert the callback to not return a result if there is an error
 function wrapCallback(callback, convertResult) {

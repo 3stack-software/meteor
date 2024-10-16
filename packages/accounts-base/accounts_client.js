@@ -1,3 +1,4 @@
+import { ref } from 'vue';
 import {AccountsCommon} from "./accounts_common.js";
 
 /**
@@ -15,11 +16,12 @@ export class AccountsClient extends AccountsCommon {
   constructor(options) {
     super(options);
 
-    this._loggingIn = new ReactiveVar(false);
-    this._loggingOut = new ReactiveVar(false);
+    this._loggingIn = ref(false);
+    this._loggingOut = ref(false);
 
-    this._loginServicesHandle =
-      this.connection.subscribe("meteor.loginServiceConfiguration");
+    this._loginServicesHandle = this.connection.subscribe(
+      'meteor.loginServiceConfiguration',
+    );
 
     this._pageLoadLoginCallbacks = [];
     this._pageLoadLoginAttemptInfo = null;
@@ -64,7 +66,7 @@ export class AccountsClient extends AccountsCommon {
   // also uses it to make loggingIn() be true during the beginPasswordExchange
   // method call too.
   _setLoggingIn(x) {
-    this._loggingIn.set(x);
+    this._loggingIn.value = x;
   }
 
   /**
@@ -72,7 +74,11 @@ export class AccountsClient extends AccountsCommon {
    * @locus Client
    */
   loggingIn() {
-    return this._loggingIn.get();
+    return this._loggingIn.value;
+  }
+
+  _setLoggingOut(x) {
+    this._loggingOut.value = x;
   }
 
   /**
@@ -80,7 +86,7 @@ export class AccountsClient extends AccountsCommon {
    * @locus Client
    */
   loggingOut() {
-    return this._loggingOut.get();
+    return this._loggingOut.value;
   }
 
   /**
@@ -139,14 +145,15 @@ export class AccountsClient extends AccountsCommon {
       wait: true
     })
       .then((result) => {
-        this._loggingOut.set(false);
+        this._setLoggingOut(false);
         this._loginCallbacksCalled = false;
         this.makeClientLoggedOut();
         callback && callback();
       })
       .catch((e) => {
-        this._loggingOut.set(false);
-        callback && callback(e);
+        this._setLoggingOut(false);
+        this._loginCallbacksCalled = false;
+        callback && callback(error);
       });
   }
 
@@ -172,26 +179,17 @@ export class AccountsClient extends AccountsCommon {
     // `getNewToken`, we won't actually send the `removeOtherTokens` call
     // until the `getNewToken` callback has finished running, because they
     // are both wait methods.
-    this.connection.apply(
-      'getNewToken',
-      [],
-      { wait: true },
-      (err, result) => {
-        if (! err) {
-          this._storeLoginToken(
-            this.userId(),
-            result.token,
-            result.tokenExpires
-          );
+    this.connection.apply('getNewToken', [], { wait: true }, (err, result) => {
+      if (!err) {
+        this._storeLoginToken(this.userId(), result.token, result.tokenExpires);
         }
-      }
-    );
+    });
 
     this.connection.apply(
       'removeOtherTokens',
       [],
       { wait: true },
-      err => callback && callback(err)
+      err => callback && callback(err),
     );
   }
 
@@ -234,8 +232,7 @@ export class AccountsClient extends AccountsCommon {
     // Set defaults for callback arguments to no-op functions; make sure we
     // override falsey values too.
     ['validateResult', 'userCallback'].forEach(f => {
-      if (!options[f])
-        options[f] = () => null;
+      if (!options[f]) options[f] = () => null;
     });
 
     let called;
@@ -243,14 +240,13 @@ export class AccountsClient extends AccountsCommon {
     const loginCallbacks = ({ error, loginDetails }) => {
       if (!called) {
         called = true;
+        this._loginCallbacksCalled = true;
         if (!error) {
           this._onLoginHook.forEach(callback => {
             callback(loginDetails);
             return true;
           });
-          this._loginCallbacksCalled = true;
         } else {
-          this._loginCallbacksCalled = false;
           this._onLoginFailureHook.forEach(callback => {
             callback({ error });
             return true;
@@ -299,7 +295,7 @@ export class AccountsClient extends AccountsCommon {
           if (storedToken) {
             result = {
               token: storedToken,
-              tokenExpires: this._storedLoginTokenExpires()
+              tokenExpires: this._storedLoginTokenExpires(),
             };
           }
           if (!result.tokenExpires)
@@ -380,14 +376,12 @@ export class AccountsClient extends AccountsCommon {
       // Make the client logged in. (The user data should already be loaded!)
       this.makeClientLoggedIn(result.id, result.token, result.tokenExpires);
 
-      // use Tracker to make we sure have a user before calling the callbacks
-      Tracker.autorun(async function (computation) {
-        const user = await Tracker.withComputation(computation, () =>
-          Meteor.userAsync(),
-        );
-
-        if (user) {
-          loginCallbacks({ loginDetails: result })
+      console.log(this.userId());
+      // use Vue to make we sure have a user before calling the callbacks
+      watch(this.userId(), (newValue, oldValue) => {
+        console.log({newValue, oldValue})
+        if (newValue) {
+          loginCallbacks({ loginDetails: result });
         }
       });
 
@@ -396,7 +390,7 @@ export class AccountsClient extends AccountsCommon {
     if (!options._suppressLoggingIn) {
       this._setLoggingIn(true);
     }
-    this.connection.applyAsync(
+    this.connection.apply(
       options.methodName,
       options.methodArguments,
       { wait: true, onResultReceived: onResultReceived },

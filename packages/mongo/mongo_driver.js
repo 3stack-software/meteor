@@ -12,7 +12,6 @@ import clone from 'lodash.clone';
  */
 import MongoDB from 'mongodb'
 import path from 'path';
-import Future from 'fibers/future';
 import {
   ASYNC_CURSOR_METHODS,
   CLIENT_ONLY_METHODS,
@@ -25,6 +24,8 @@ import { PollingObserveDriver } from './polling_observe_driver.js';
 import { OplogObserveDriver } from './oplog_observe_driver.js';
 import { getConnectionOptions } from "./connection_options.js";
 import { publishCursor, rewriteSelector } from './collection_util.js';
+import { CurrentWriteFence } from '../ddp-server/writefence.js';
+import { InvalidationCrossbar } from '../ddp-server/crossbar.js';
 
 const FILE_ASSET_SUFFIX = 'Asset';
 const ASSETS_FOLDER = 'assets';
@@ -269,7 +270,7 @@ MongoConnection.prototype.createCappedCollectionAsync = async function (
 // after the observer notifiers have added themselves to the write
 // fence), you should call 'committed()' on the object returned.
 MongoConnection.prototype._maybeBeginWrite = function () {
-  const fence = DDPServer._getCurrentFence();
+  const fence = CurrentWriteFence.get();
   if (fence) {
     return fence.beginWrite();
   } else {
@@ -534,7 +535,7 @@ MongoConnection.prototype.updateAsync = async function (collection_name, selecto
       ! isModify &&
       ! knownId &&
       options.insertedId &&
-      ! (options.insertedId instanceof Mongo.ObjectID &&
+      ! (options.insertedId instanceof MongoID.ObjectID &&
          options.generatedId)) {
     // In case of an upsert with a replacement, where there is no _id defined
     // in either the query or the replacement doc, mongo will generate an id itself.
@@ -582,7 +583,7 @@ MongoConnection.prototype.updateAsync = async function (collection_name, selecto
               if (knownId) {
                 meteorResult.insertedId = knownId;
               } else if (meteorResult.insertedId instanceof MongoDB.ObjectID) {
-                meteorResult.insertedId = new Mongo.ObjectID(meteorResult.insertedId.toHexString());
+                meteorResult.insertedId = new MongoID.ObjectID(meteorResult.insertedId.toHexString());
               }
             }
             await refresh();
@@ -1603,7 +1604,7 @@ Object.assign(MongoConnection.prototype, {
 export async function listenAll (cursorDescription, listenCallback) {
   const listeners = [];
   await forEachTrigger(cursorDescription, function (trigger) {
-    listeners.push(DDPServer._InvalidationCrossbar.listen(
+    listeners.push(InvalidationCrossbar.listen(
       trigger, listenCallback));
   });
 

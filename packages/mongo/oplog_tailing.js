@@ -2,6 +2,7 @@ import isEmpty from 'lodash.isempty';
 import has from 'lodash.has';
 import { Long } from 'mongodb';
 import { CursorDescription, MongoConnection, OPLOG_COLLECTION } from './mongo_driver.js';
+import { Crossbar } from '../ddp-server/crossbar.js';
 
 var TOO_FAR_BEHIND = process.env.METEOR_OPLOG_TOO_FAR_BEHIND || 2000;
 var TAIL_TIMEOUT = +process.env.METEOR_OPLOG_TAIL_TIMEOUT || 30000;
@@ -32,7 +33,7 @@ export const OplogHandle = function (oplogUrl, dbName) {
   self._tailHandle = null;
   self._readyPromiseResolver = null;
   self._readyPromise = new Promise(r => self._readyPromiseResolver = r);
-  self._crossbar = new DDPServer._Crossbar({
+  self._crossbar = new Crossbar({
     factPackage: "mongo-livedata", factName: "oplog-watchers"
   });
   self._baseOplogSelector = {
@@ -81,8 +82,6 @@ export const OplogHandle = function (oplogUrl, dbName) {
   self._startTrailingPromise = self._startTailing();
   //TODO[fibers] Why wait?
 };
-
-MongoInternals.OplogHandle = OplogHandle;
 
 Object.assign(OplogHandle.prototype, {
   stop: async function () {

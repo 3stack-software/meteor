@@ -36,6 +36,7 @@ export {
   Meteor$_relativeToSiteRootUrl as _relativeToSiteRootUrl,
 } from './packages/meteor/url_common.js';
 export { Meteor$_escapeRegExp as _escapeRegExp } from './packages/meteor/string_utils.js';
+export { Meteor$_AsynchronousQueue as _AsynchronousQueue, Meteor$_SynchronousQueue as _SynchronousQueue } from './packages/meteor/async_helpers.js';
 
 export {
   Meteor$server as server,

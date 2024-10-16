@@ -62,7 +62,7 @@ SQp.runTask = function (task) {
 // this causes an issue when LocalCollection._observeQueue.drain() is called
 //  during a method call, causing all handlers, and promises launched in those
 //  handlers to be executed in the environment of the simulation.
-const withoutEnvironment = Meteor$bindEnvironment(function (task) {
+const withoutEnvironment = Meteor.bindEnvironment(function (task) {
   return task();
 })
 SQp.queueTask = function (task) {

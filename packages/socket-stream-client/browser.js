@@ -8,7 +8,7 @@ import { StreamClientCommon } from "./common.js";
 // Statically importing SockJS here will prevent native WebSocket usage
 // below (in favor of SockJS), but will ensure maximum compatibility for
 // clients stuck in unusual networking environments.
-import SockJS from 'sockjs-client';
+import SockJS from "./sockjs-1.6.1-min-.js";
 
 export class ClientStream extends StreamClientCommon {
   // @param url {String} URL to Meteor app
@@ -130,7 +130,12 @@ export class ClientStream extends StreamClientCommon {
   _sockjsProtocolsWhitelist() {
     // only allow polling protocols. no streaming.  streaming
     // makes safari spin.
-    var protocolsWhitelist = ['xhr-polling'];
+    var protocolsWhitelist = [
+      'xdr-polling',
+      'xhr-polling',
+      'iframe-xhr-polling',
+      'jsonp-polling'
+    ];
 
     // iOS 4 and 5 and below crash when using websockets over certain
     // proxies. this seems to be resolved with iOS 6. eg
@@ -157,12 +162,15 @@ export class ClientStream extends StreamClientCommon {
       ...this.options._sockjsOptions
     };
 
-    this.socket = __meteor_runtime_config__.DISABLE_SOCKJS
+    const hasSockJS = typeof SockJS === "function";
+    const disableSockJS = __meteor_runtime_config__.DISABLE_SOCKJS;
+
+    this.socket = hasSockJS && !disableSockJS
       // Convert raw URL to SockJS URL each time we open a connection, so
       // that we can connect to random hostnames and get around browser
       // per-host connection limits.
-      ? new WebSocket(toWebsocketUrl(this.rawUrl))
-      : new SockJS(toSockjsUrl(this.rawUrl), undefined, options);
+      ? new SockJS(toSockjsUrl(this.rawUrl), undefined, options)
+      : new WebSocket(toWebsocketUrl(this.rawUrl));
 
     this.socket.onopen = data => {
       this.lastError = null;

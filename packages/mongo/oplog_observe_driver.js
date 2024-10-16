@@ -4,6 +4,7 @@ import { oplogV2V1Converter } from "./oplog_v2_converter";
 import { check, Match } from 'meteor/check';
 import { idForOp } from "./oplog_tailing.js";
 import { Cursor, CursorDescription, forEachTrigger, listenAll } from "./mongo_driver.js";
+import { CurrentWriteFence } from '../ddp-server/writefence.js';
 
 var PHASE = {
   QUERYING: "QUERYING",
@@ -159,7 +160,7 @@ _.extend(OplogObserveDriver.prototype, {
     self._addStopHandles(await listenAll(
       self._cursorDescription, function () {
         // If we're not in a pre-fire write fence, we don't have to do anything.
-        const fence = DDPServer._getCurrentFence();
+        const fence = CurrentWriteFence.get();
         if (!fence || fence.fired)
           return;
   

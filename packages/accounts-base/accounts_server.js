@@ -122,6 +122,7 @@ export class AccountsServer extends AccountsCommon {
     const currentInvocation = DDP._CurrentMethodInvocation.get() || DDP._CurrentPublicationInvocation.get();
     if (!currentInvocation)
       throw new Error("Meteor.userId can only be invoked in method calls or publications.");
+    
     return currentInvocation.userId;
   }
 
@@ -302,7 +303,7 @@ export class AccountsServer extends AccountsCommon {
 
     if (query.id) {
       // default field selector is added within getUserById()
-      user = this.users.findOne(query.id, this._addDefaultFieldSelector(options));
+      user = await Meteor.users.findOneAsync(query.id, this._addDefaultFieldSelector(options));
     } else {
       options = this._addDefaultFieldSelector(options);
       let fieldName;
@@ -318,11 +319,11 @@ export class AccountsServer extends AccountsCommon {
       }
       let selector = {};
       selector[fieldName] = fieldValue;
-      user = await this.users.findOneAsync(selector, options);
+      user = await Meteor.users.findOneAsync(selector, options);
       // If user is not found, try a case insensitive lookup
       if (!user) {
         selector = this._selectorForFastCaseInsensitiveLookup(fieldName, fieldValue);
-        const candidateUsers = await this.users.find(selector, { ...options, limit: 2 }).fetchAsync();
+        const candidateUsers = await Meteor.users.find(selector, { ...options, limit: 2 }).fetchAsync();
         // No match if multiple candidates are found
         if (candidateUsers.length === 1) {
           user = candidateUsers[0];
@@ -765,7 +766,6 @@ export class AccountsServer extends AccountsCommon {
     // Bring into lexical scope for publish callbacks that need `this`
     const { users, _autopublishFields, _defaultPublishFields } = this;
 
-    Meteor.startup(() => {
       // Publish all login service configuration fields other than secret.
       this._server.publish("meteor.loginServiceConfiguration", function() {
         if (Package['service-configuration']) {
@@ -774,7 +774,7 @@ export class AccountsServer extends AccountsCommon {
         }
         this.ready();
       }, {is_auto: true}); // not technically autopublish, but stops the warning.
-    });
+
     // Use Meteor.startup to give other packages a chance to call
     // setDefaultPublishFields.
     Meteor.startup(() => {
@@ -790,6 +790,7 @@ export class AccountsServer extends AccountsCommon {
       // Publish the current user's record to the client.
       this._server.publish(null, function () {
         if (this.userId) {
+          console.log(users)
           return users.find({
             _id: this.userId
           }, {
@@ -1470,7 +1471,7 @@ export class AccountsServer extends AccountsCommon {
     );
 
     if (fieldValue && !skipCheck) {
-      const matchedUsers = this.users
+      const matchedUsers = await Meteor.users
         .find(
           this._selectorForFastCaseInsensitiveLookup(fieldName, fieldValue),
           {
@@ -1513,7 +1514,7 @@ export class AccountsServer extends AccountsCommon {
       await this._checkForCaseInsensitiveDuplicates('emails.address', 'Email', email, userId);
     } catch (ex) {
       // Remove inserted user if the check fails
-      await this.users.removeAsync(userId);
+      await Meteor.users.removeAsync(userId);
       throw ex;
     }
     return userId;

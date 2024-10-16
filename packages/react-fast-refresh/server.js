@@ -23,7 +23,7 @@ const babelPlugin = enabled ?
   require('react-refresh/babel') :
   null;
 
-// Babel plugin that adds a call to global.___INIT_METEOR_FAST_REFRESH()
+// Babel plugin that adds a call to globalThis.___INIT_METEOR_FAST_REFRESH()
 // at the start of every file compiled with react-refresh to ensure the runtime
 // is enabled if it is used.
 function enableReactRefreshBabelPlugin(babel) {

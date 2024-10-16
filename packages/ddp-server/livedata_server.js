@@ -1,6 +1,7 @@
 import { StreamServer } from './stream_server.js';
 import { WriteFence, CurrentWriteFence } from './writefence.js';
 import { Crossbar, InvalidationCrossbar } from './crossbar.js';
+
 export const DDPServer = {
   _WriteFence: WriteFence,
   _CurrentWriteFence: CurrentWriteFence,
@@ -12,7 +13,7 @@ export const DDPServer = {
 // This allows someone to:
 // - Choose a trade-off between client-server bandwidth and server memory usage
 // - Implement special (non-mongo) collections like volatile message queues
-const publicationStrategies = {
+export const publicationStrategies = {
   // SERVER_MERGE is the default strategy.
   // When using this strategy, the server maintains a copy of all data a connection is subscribed to.
   // This allows us to only send deltas over multiple publications.
@@ -48,8 +49,6 @@ const publicationStrategies = {
   }
 };
 
-DDPServer.publicationStrategies = publicationStrategies;
-
 // This file contains classes:
 // * Session - The server's connection to a single DDP client
 // * Subscription - A single subscription for a single client
@@ -80,21 +79,10 @@ Object.assign(DummyDocumentView.prototype, {
 });
 
 // Represents a single document in a SessionCollectionView
-var SessionDocumentView = function () {
+export const SessionDocumentView = function () {
   var self = this;
   self.existsIn = new Set(); // set of subscriptionHandle
   self.dataByKey = new Map(); // key-> [ {subscriptionHandle, value} by precedence]
-};
-
-DDPServer._SessionDocumentView = SessionDocumentView;
-
-DDPServer._getCurrentFence = function () {
-  let currentInvocation = this._CurrentWriteFence.get();
-  if (currentInvocation) {
-    return currentInvocation;
-  }
-  currentInvocation = DDP._CurrentMethodInvocation.get();
-  return currentInvocation ? currentInvocation.fence : undefined;
 };
 
 _.extend(SessionDocumentView.prototype, {
@@ -185,15 +173,12 @@ _.extend(SessionDocumentView.prototype, {
  * @param {Object.<String, Function>} sessionCallbacks The callbacks for added, changed, removed
  * @class SessionCollectionView
  */
-var SessionCollectionView = function (collectionName, sessionCallbacks) {
+export const SessionCollectionView = function (collectionName, sessionCallbacks) {
   var self = this;
   self.collectionName = collectionName;
   self.documents = new Map();
   self.callbacks = sessionCallbacks;
 };
-
-DDPServer._SessionCollectionView = SessionCollectionView;
-
 
 Object.assign(SessionCollectionView.prototype, {
 
@@ -762,7 +747,7 @@ Object.assign(Session.prototype, {
       // Set up to mark the method as satisfied once all observers
       // (and subscriptions) have reacted to any writes that were
       // done.
-      var fence = new DDPServer._WriteFence;
+      var fence = new WriteFence();
       fence.onAllCommitted(function () {
         // Retire the fence so that future writes are allowed.
         // This means that callbacks like timers are free to use
@@ -841,7 +826,7 @@ Object.assign(Session.prototype, {
           );
 
         resolve(
-          DDPServer._CurrentWriteFence.withValue(
+          CurrentWriteFence.withValue(
             fence,
             getCurrentMethodInvocationResult,
             {
@@ -1929,7 +1914,7 @@ Object.assign(Server.prototype, {
   }
 });
 
-var calculateVersion = function (clientSupportedVersions,
+export function calculateVersion(clientSupportedVersions,
                                  serverSupportedVersions) {
   var correctVersion = _.find(clientSupportedVersions, function (version) {
     return _.contains(serverSupportedVersions, version);
@@ -1940,7 +1925,6 @@ var calculateVersion = function (clientSupportedVersions,
   return correctVersion;
 };
 
-DDPServer._calculateVersion = calculateVersion;
 
 
 // "blind" exceptions other than those that were deliberately thrown to signal

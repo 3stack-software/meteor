@@ -48,7 +48,7 @@ function isArrayOperator(operator) {
 
 function flattenObjectInto(target, source, prefix) {
   if (Array.isArray(source) || typeof source !== 'object' || source === null ||
-      source instanceof Mongo.ObjectID) {
+      source instanceof MongoID.ObjectID) {
     target[prefix] = source;
   } else {
     const entries = Object.entries(source);
@@ -72,17 +72,17 @@ function convertOplogDiff(oplogEntry, diff, prefix) {
   Object.entries(diff).forEach(([diffKey, value]) => {
     if (diffKey === 'd') {
       // Handle `$unset`s.
-      oplogEntry.$unset ??= {};
+      oplogEntry.$unset = oplogEntry.$unset || {};
       Object.keys(value).forEach(key => {
         oplogEntry.$unset[join(prefix, key)] = true;
       });
     } else if (diffKey === 'i') {
       // Handle (potentially) nested `$set`s.
-      oplogEntry.$set ??= {};
+      oplogEntry.$set = oplogEntry.$unset || {};
       flattenObjectInto(oplogEntry.$set, value, prefix);
     } else if (diffKey === 'u') {
       // Handle flat `$set`s.
-      oplogEntry.$set ??= {};
+      oplogEntry.$set = oplogEntry.$unset || {};
       Object.entries(value).forEach(([key, value]) => {
         oplogEntry.$set[join(prefix, key)] = value;
       });
@@ -100,10 +100,10 @@ function convertOplogDiff(oplogEntry, diff, prefix) {
           if (position[0] === 's') {
             convertOplogDiff(oplogEntry, value, positionKey);
           } else if (value === null) {
-            oplogEntry.$unset ??= {};
+            oplogEntry.$unset = oplogEntry.$unset || {};
             oplogEntry.$unset[positionKey] = true;
           } else {
-            oplogEntry.$set ??= {};
+            oplogEntry.$set = oplogEntry.$unset || {};
             oplogEntry.$set[positionKey] = value;
           }
         });

@@ -85,10 +85,35 @@ Tracker.Computation = class Computation {
      */
     this.firstRun = true;
 
+    /**
+     * @summary Forces autorun blocks to be executed in synchronous-looking order by storing the value autorun promise thus making it awaitable.
+     * @locus Client
+     * @memberOf Tracker.Computation
+     * @instance
+     * @name  firstRunPromise
+     * @returns {Promise<unknown>}
+     */
+    this.firstRunPromise = undefined;
+
     this._id = nextId++;
     this._onInvalidateCallbacks = [];
     this._onStopCallbacks = [];
   }
+
+  /**
+   * Resolves the firstRunPromise with the result of the autorun function.
+   * @param {*} onResolved
+   * @param {*} onRejected
+   * @returns{Promise<unknown}
+   */
+  then(onResolved, onRejected) {
+    return this.firstRunPromise.then(onResolved, onRejected);
+  };
+
+
+  catch(onRejected) {
+    return this.firstRunPromise.catch(onRejected)
+  };
 
   get invalidated() {
     console.warn('Computation.invalidated is not supported');

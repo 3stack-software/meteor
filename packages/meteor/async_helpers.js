@@ -162,6 +162,8 @@ Object.assign(AsynchronousQueue.prototype, {
 });
 
 export const Meteor$_AsynchronousQueue = AsynchronousQueue;
+// This is only picked up by the server config to make the build work, it shouldn't get called.
+export const Meteor$_SynchronousQueue = () => new Error('No sync queues on the server!')
 
 
 // Sleep. Mostly used for debugging (eg, inserting latency into server

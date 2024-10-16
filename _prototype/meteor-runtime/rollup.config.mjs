@@ -39,7 +39,6 @@ export default [
       'denque',
       'faye-websocket',
       'fibers',
-      'fibers/future',
       'fs', // node:fs
       'http', // node:http
       'meteor-promise',

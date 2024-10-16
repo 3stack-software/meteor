@@ -1,27 +1,27 @@
-export function publishCursor(cursor, sub, collection) {
-  var observeHandle = cursor.observeChanges(
-    {
-      added: function (id, fields) {
-        sub.added(collection, id, fields);
+export async function publishCursor(cursor, sub, collection) {
+  var observeHandle = await cursor.observeChanges(
+      {
+        added: function(id, fields) {
+          sub.added(collection, id, fields);
+        },
+        changed: function(id, fields) {
+          sub.changed(collection, id, fields);
+        },
+        removed: function(id) {
+          sub.removed(collection, id);
+        },
       },
-      changed: function (id, fields) {
-        sub.changed(collection, id, fields);
-      },
-      removed: function (id) {
-        sub.removed(collection, id);
-      },
-    },
-    // Publications don't mutate the documents
-    // This is tested by the `livedata - publish callbacks clone` test
-    { nonMutatingCallbacks: true }
+      // Publications don't mutate the documents
+      // This is tested by the `livedata - publish callbacks clone` test
+      { nonMutatingCallbacks: true }
   );
 
   // We don't call sub.ready() here: it gets called in livedata_server, after
   // possibly calling _publishCursor on multiple returned cursors.
 
   // register stop callback (expects lambda w/ no args).
-  sub.onStop(function () {
-    observeHandle.stop();
+  sub.onStop(async function() {
+    return await observeHandle.stop();
   });
 
   // return the observeHandle in case it needs to be stopped early

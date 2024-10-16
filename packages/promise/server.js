@@ -1,3 +1,4 @@
+import './extensions';
 // import { makeCompatible } from 'meteor-promise';
 // import Fibers from 'fibers';
 import { setMinimumBrowserVersions } from 'meteor/modern-browsers';

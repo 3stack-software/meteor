@@ -404,7 +404,7 @@ Object.assign(AppRunner.prototype, {
     self.startPromise = self._makePromise("start");
 
     self.isRunning = true;
-    global.__METEOR_ASYNC_LOCAL_STORAGE.run({}, () =>
+    globalThis.__METEOR_ASYNC_LOCAL_STORAGE.run({}, () =>
         self._runApp()
           .catch((e) => {
             // There was an unexpected error when building the app

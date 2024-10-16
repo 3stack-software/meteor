@@ -17,7 +17,7 @@ export * as Minimongo from './packages/minimongo/minimongo_server_public.js';
 export * as Mongo from './packages/mongo/server_main.js';
 export * as MongoID from './packages/mongo-id/id.js';
 import './packages/oauth2/oauth2_server.js';
-export { Promise } from './packages/promise/server.js';
+// export { Promise } from './packages/promise/server.js';
 export { Random } from './packages/random/main_server.js';
 export { RateLimiter } from './packages/rate-limit/rate-limit.js';
 export { RoutePolicy } from './packages/routepolicy/main.js';

@@ -1,5 +1,6 @@
 import throttle from 'lodash.throttle';
 import { listenAll } from "./mongo_driver.js";
+import { CurrentWriteFence } from '../ddp-server/writefence.js';
 
 var POLLING_THROTTLE_MS = +process.env.METEOR_POLLING_THROTTLE_MS || 50;
 var POLLING_INTERVAL_MS = +process.env.METEOR_POLLING_INTERVAL_MS || 10 * 1000;
@@ -53,7 +54,7 @@ _.extend(PollingObserveDriver.prototype, {
         // When someone does a transaction that might affect us, schedule a poll
         // of the database. If that transaction happens inside of a write fence,
         // block the fence until we've polled and notified observers.
-        const fence = DDPServer._getCurrentFence();
+        const fence = CurrentWriteFence.get();
         if (fence)
           self._pendingWrites.push(fence.beginWrite());
         // Ensure a poll is scheduled... but if we already know that one is,

@@ -6,6 +6,7 @@ import strip from '@rollup/plugin-strip';
 import path from 'node:path';
 import * as url from 'node:url';
 import prettier from 'rollup-plugin-prettier';
+import { visualizer } from "rollup-plugin-visualizer";
 
 const projectRootDir = url.fileURLToPath(new URL('.', import.meta.url));
 
@@ -192,10 +193,10 @@ const MeteorServerNamespace = [
     path: 'packages/meteor/startup_server.js',
     names: ['startup'],
   },
-  {
-    path: 'packages/meteor/fiber_helpers.js',
-    names: ['_noYieldsAllowed', '_SynchronousQueue'],
-  },
+  // {
+  //   path: 'packages/meteor/fiber_helpers.js',
+  //   names: ['_noYieldsAllowed', '_SynchronousQueue'],
+  // },
   {
     path: 'packages/meteor/denque.js',
     names: ['_DoubleEndedQueue'],
@@ -257,6 +258,7 @@ const MeteorServerNamespace = [
     path: 'packages/meteor/async_helpers.js',
     names: [
       '_AsynchronousQueue',
+      '_SynchronousQueue',
       '_noYieldsAllowed',
       '_sleepForMs'
     ]
@@ -641,7 +643,7 @@ const makeInjects = isClient =>
       const add =
         hasGlobals && ((p.client && isClient) || (p.server && !isClient));
       if (add) {
-        return inject({
+        const output = ({
           modules: Object.fromEntries(
             p.globals.map(opt =>
               typeof opt === 'string'
@@ -654,6 +656,8 @@ const makeInjects = isClient =>
           ),
           exclude: `${getPath(p)}/**`,
         });
+        // console.log(output);
+        return inject(output);
       }
       return null;
     })
@@ -673,6 +677,15 @@ const makeAliases = isClient =>
     }
     return [];
   });
+
+const commonExternal = [
+  'lodash.has',
+  'lodash.identity',
+  'lodash.clone',
+  'lodash.isempty',
+  'lodash.throttle',
+  'lodash.once'
+]
 
 function makeConfig(input, output, isClient) {
   return {
@@ -701,8 +714,9 @@ function makeConfig(input, output, isClient) {
       ],
     },
     external: isClient
-      ? ['decimal.js', 'sockjs-client']
+      ? [...commonExternal, 'decimal.js', 'sockjs-client', /@vue/]
       : [
+          ...commonExternal,
           '@vlasky/whomst',
           'assert', // node:assert
           'basic-auth-connect',
@@ -711,23 +725,20 @@ function makeConfig(input, output, isClient) {
           'chalk',
           'cluster',
           'compression',
-          'connect',
           'cookie-parser',
           'crypto', //node:crypto
           'decimal.js',
           'denque',
           'faye-websocket',
-          'fibers',
-          'fibers/future',
           'fs', // node:fs
           'http', // node:http
-          'meteor-promise',
           'meteor/inter-process-messaging',
           'meteor/reload', // elided
           'mongodb',
           'mongodb-uri',
           'node-fetch',
-          'nodemailer',
+          /nodemailer/,
+          // 'nodemailer-openpgp',
           'os', // node:os
           'parseurl',
           'path', // node:path
@@ -738,6 +749,10 @@ function makeConfig(input, output, isClient) {
           'underscore',
           'url', // node:url
           'useragent',
+          'express',
+          'child_process', // node:child_process
+          'util', // node:util
+          'async_hooks'
         ],
     plugins: [
       replace({
@@ -906,6 +921,10 @@ function makeConfig(input, output, isClient) {
         htmlWhitespaceSensitivity: 'ignore',
         parser: 'espree',
       }),
+
+      isClient ? visualizer({
+        template: 'network'
+      }) : undefined,
     ],
   };
 }

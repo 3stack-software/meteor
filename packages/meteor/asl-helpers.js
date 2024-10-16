@@ -1,16 +1,25 @@
+
+let AsyncLocalStorage = null;
+if (Meteor.isServer) {
+  AsyncLocalStorage = (await import('async_hooks')).AsyncLocalStorage
+}
+
 function getAsl() {
+  if (!Meteor.isServer) {
+    return {};
+  }
+
   if (!true) {
     throw new Error('Can not use async hooks when fibers are enabled');
   }
 
-  if (!global.__METEOR_ASYNC_LOCAL_STORAGE) {
+  if (!globalThis.__METEOR_ASYNC_LOCAL_STORAGE) {
     // lazily create __METEOR_ASYNC_LOCAL_STORAGE since this might run in older Meteor
     // versions that are incompatible with async hooks
-    var AsyncLocalStorage = Npm.require('async_hooks').AsyncLocalStorage;
-    global.__METEOR_ASYNC_LOCAL_STORAGE = new AsyncLocalStorage();
+    globalThis.__METEOR_ASYNC_LOCAL_STORAGE = new AsyncLocalStorage();
   }
 
-  return global.__METEOR_ASYNC_LOCAL_STORAGE;
+  return globalThis.__METEOR_ASYNC_LOCAL_STORAGE;
 }
 
 function getAslStore() {

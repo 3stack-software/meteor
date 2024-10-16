@@ -1,3 +1,4 @@
+import { ref, reactive } from 'vue';
 import { DDPCommon } from 'meteor/ddp-common';
 import { Tracker } from 'meteor/tracker';
 import { EJSON } from 'meteor/ejson';
@@ -230,14 +231,13 @@ export class Connection {
     //   - stopCallback (an optional callback to call when the sub terminates
     //     for any reason, with an error argument if an error triggered the stop)
     self._subscriptions = {};
+    self._subscriptionsReady = reactive(new Set());
 
     // Reactive userId.
-    self._userId = null;
-    self._userIdDeps = new Tracker.Dependency();
+    self._userIdRef = ref(null);
 
     // Block auto-reload while we're waiting for method responses.
-    if (Meteor.isClient &&
-        ! options.reloadWithOutstanding) {
+    if (!options.reloadWithOutstanding) {
       Reload._onMigrate(retry => {
         if (! self._readyToMigrate()) {
           self._retryMigrate = retry;
@@ -255,27 +255,19 @@ export class Connection {
       }
     };
 
-    if (Meteor.isServer) {
-      self._stream.on(
-        'message',
-        Meteor.bindEnvironment(
-          this.onMessage.bind(this),
-          'handling DDP message'
-        )
-      );
-      self._stream.on(
-        'reset',
-        Meteor.bindEnvironment(this.onReset.bind(this), 'handling DDP reset')
-      );
-      self._stream.on(
-        'disconnect',
-        Meteor.bindEnvironment(onDisconnect, 'handling DDP disconnect')
-      );
-    } else {
+    {
       self._stream.on('message', this.onMessage.bind(this));
       self._stream.on('reset', this.onReset.bind(this));
       self._stream.on('disconnect', onDisconnect);
     }
+  }
+
+  get _userId() {
+    return this._userIdRef.value;
+  }
+
+  set _userId(value) {
+    this._userIdRef.value = value;
   }
 
   // 'name' is the name of the data on the wire that should go in the
@@ -443,8 +435,16 @@ export class Connection {
         name: name,
         params: EJSON.clone(params),
         inactive: false,
-        ready: false,
-        readyDeps: new Tracker.Dependency(),
+        get ready() {
+          return this.connection._subscriptionsReady.has(this.id);
+        },
+        set ready(value) {
+          if (value) {
+            this.connection._subscriptionsReady.add(this.id);
+          } else {
+            this.connection._subscriptionsReady.delete(this.id);
+          }
+        },
         readyCallback: callbacks.onReady,
         // XXX COMPAT WITH 1.0.3.1 #errorCallback
         errorCallback: callbacks.onError,
@@ -452,7 +452,7 @@ export class Connection {
         connection: self,
         remove() {
           delete this.connection._subscriptions[this.id];
-          this.ready && this.readyDeps.changed();
+          this.ready = false;
         },
         stop() {
           this.connection._sendQueued({ msg: 'unsub', id: id });
@@ -467,46 +467,58 @@ export class Connection {
     }
 
     // return a handle to the application.
-    const handle = {
+    return {
       stop() {
-        if (! hasOwn.call(self._subscriptions, id)) {
+        if (!Object.hasOwn(self._subscriptions, id)) {
           return;
         }
         self._subscriptions[id].stop();
       },
       ready() {
         // return false if we've unsubscribed.
-        if (!hasOwn.call(self._subscriptions, id)) {
+        if (!Object.hasOwn(self._subscriptions, id)) {
           return false;
         }
-        const record = self._subscriptions[id];
-        record.readyDeps.depend();
-        return record.ready;
+        return self._subscriptions[id].ready;
       },
-      subscriptionId: id
-    };
-
-    if (Tracker.active) {
-      // We're in a reactive computation, so we'd like to unsubscribe when the
-      // computation is invalidated... but not if the rerun just re-subscribes
-      // to the same subscription!  When a rerun happens, we use onInvalidate
-      // as a change to mark the subscription "inactive" so that it can
-      // be reused from the rerun.  If it isn't reused, it's killed from
-      // an afterFlush.
-      Tracker.onInvalidate((c) => {
-        if (hasOwn.call(self._subscriptions, id)) {
+      markInactive() {
+        if (Object.hasOwn(self._subscriptions, id)) {
           self._subscriptions[id].inactive = true;
         }
+      },
+      stopInactive() {
+        if (
+          Object.hasOwn(self._subscriptions, id) &&
+          self._subscriptions[id].inactive
+        ) {
+          self._subscriptions[id].stop();
+        }
+      },
+      subscriptionId: id,
+    };
+  }
 
-        Tracker.afterFlush(() => {
-          if (hasOwn.call(self._subscriptions, id) &&
-              self._subscriptions[id].inactive) {
-            handle.stop();
-          }
+  // options:
+  // - onLateError {Function(error)} called if an error was received after the ready event.
+  //     (errors received before ready cause an error to be thrown)
+  _subscribeAndWait(name, args, options) {
+    const self = this;
+    const f = new Future();
+    let ready = false;
+    args = args || [];
+    args.push({
+      onReady() {
+        ready = true;
+        f['return']();
+      },
+      onError(e) {
+        if (!ready) f['throw'](e);
+        else options && options.onLateError && options.onLateError(e);
+      },
         });
-      });
-    }
 
+    const handle = self.subscribe.apply(self, [name].concat(args));
+    f.wait();
     return handle;
   }
 
@@ -1091,15 +1103,11 @@ export class Connection {
   /// Reactive user system
   ///
   userId() {
-    if (this._userIdDeps) this._userIdDeps.depend();
     return this._userId;
   }
 
   setUserId(userId) {
-    // Avoid invalidating dependents if setUserId is called with current value.
-    if (this._userId === userId) return;
     this._userId = userId;
-    if (this._userIdDeps) this._userIdDeps.changed();
   }
 
   // Returns true if we are in a state after reconnect of waiting for subs to be
@@ -1622,8 +1630,7 @@ export class Connection {
         if (subRecord.ready) return;
         subRecord.ready = true;
         subRecord.readyCallback && subRecord.readyCallback();
-        subRecord.readyDeps.changed();
-      });
+              });
     });
   }
 
@@ -1799,17 +1806,8 @@ export class Connection {
     if (msg.offendingMessage) Meteor._debug('For: ', msg.offendingMessage);
   }
 
-  _sendOutstandingMethodBlocksMessages() {
+  _sendOutstandingMethodBlocksMessages(oldOutstandingMethodBlocks) {
     const self = this;
-    const oldOutstandingMethodBlocks = self._outstandingMethodBlocks;
-    self._outstandingMethodBlocks = [];
-
-    self.onReconnect && self.onReconnect();
-    _reconnectHook.each(callback => {
-      callback(self);
-      return true;
-    });
-
     if (isEmpty(oldOutstandingMethodBlocks)) return;
 
     // We have at least one block worth of old outstanding methods to try
@@ -1884,7 +1882,13 @@ export class Connection {
     // Any message counts as receiving a pong, as it demonstrates that
     // the server is still alive.
     if (this._heartbeat) {
-      this._heartbeat.messageReceived();
+      // when the server sends too many messages at once, server initiated pings are delayed
+      // this is common during the subscribe or unsubscribe phase,
+      // where there are many "added" or "removed" messages respectively
+      // marking these messages as "minor" means we'll still send pings to the
+      //  server in these cases
+      const minorPacket = msg?.msg === 'added' || msg?.msg === 'removed';
+      this._heartbeat.messageReceived(!minorPacket);
     }
 
     if (msg === null || !msg.msg) {
@@ -2007,7 +2011,7 @@ export class Connection {
     // add new subscriptions at the end. this way they take effect after
     // the handlers and we don't see flicker.
     Object.entries(this._subscriptions).forEach(([id, sub]) => {
-      this._sendQueued({
+      this._send({
         msg: 'sub',
         id: id,
         name: sub.name,

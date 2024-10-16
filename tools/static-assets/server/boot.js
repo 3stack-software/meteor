@@ -493,13 +493,13 @@ var runMain = Profile("Run main()", async function () {
 });
 
 (async function startServerProcess() {
-  if (!global.__METEOR_ASYNC_LOCAL_STORAGE) {
+  if (!globalThis.__METEOR_ASYNC_LOCAL_STORAGE) {
     const { AsyncLocalStorage } = require('async_hooks');
-    global.__METEOR_ASYNC_LOCAL_STORAGE = new AsyncLocalStorage();
+    globalThis.__METEOR_ASYNC_LOCAL_STORAGE = new AsyncLocalStorage();
   }
 
   await Profile.run('Server startup', function() {
-    return global.__METEOR_ASYNC_LOCAL_STORAGE.run({}, async () => {
+    return globalThis.__METEOR_ASYNC_LOCAL_STORAGE.run({}, async () => {
       await loadServerBundles();
       await callStartupHooks();
       await runMain();
